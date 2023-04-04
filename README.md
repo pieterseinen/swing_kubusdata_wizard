@@ -6,6 +6,7 @@ Benodigdheden
 - Een SPSS .sav-bestand met monitordata
 
 Voordat je begint moet het volgende in orde zijn:
+
 • Zorg ervoor dat alle benodigde libraries geïnstalleerd zijn en er een recente versie van R 
 is geïnstalleerd.
 
@@ -50,6 +51,7 @@ variabel-label (i.p.v. normaal gesproken het value label)
 swing) hebben, wanneer deze dezelfde betekenis hebben. Swing ziet alle variabelen 
 met dezelfde code als hetzelfde. Bij dezelfde code zal de oude data met nieuwe data 
 aangevuld / overschreven worden.
+
   o Voorbeeld waarbij het misgaat:
     Er is een kubusbestand met de kruisvariabele geslacht geüpload uit de kindermonitor. Deze variabele kent twee waarden: Jongens & Meisjes.
     Op een later moment wordt nog een kubusbestand met de kruisvariabele geslacht geüpload uit de volwassen-ouderenmonitor. 
@@ -71,7 +73,7 @@ Maken\SPSS data
 
 2. Open in de map P:\0. Beveiligd\27. Swing\Kubusdata Wizard de snelkoppeling naar global.R
 
-3.
+3. Opstarten
   a. Eerste keer: Klik op het drop-down pijltje naast Run App en selecteer “Run external”
   b. Klik op het op het groene pijltje
   4. Er wordt nu een venster geopend in je standaardbrowser. Hier kan je kiezen voor Maak een 
