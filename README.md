@@ -23,7 +23,7 @@ Als dit is gebeurd zal dat gemeld worden in de popup die aangeeft dat de Wizard 
 is.
 
 Automatisch worden namen van indicatoren als volgt toegewezen:
-- Dichotoom: {variabel_label
+- Dichotoom: {variabel_label}
 - Niet dichotoom: {variabel_label} + ‘,’ {value_label}
 
 • Om te zorgen dat een variabele als dichotoom/binair herkend wordt, moeten ze met de 
