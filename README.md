@@ -23,29 +23,29 @@ Als dit is gebeurd zal dat gemeld worden in de popup die aangeeft dat de Wizard 
 is.
 
 Automatisch worden namen van indicatoren als volgt toegewezen:
-o Dichotoom: {variabel_label
-o Niet dichotoom: {variabel_label} + ‘,’ {value_label}
+- Dichotoom: {variabel_label
+- Niet dichotoom: {variabel_label} + ‘,’ {value_label}
 
 • Om te zorgen dat een variabele als dichotoom/binair herkend wordt, moeten ze met de 
 waarden 0/1 gecodeerd zijn. Het script maakt bij een dichotome variabele slechts één 
 indicator aan die het percentage positieven (1) geeft. De naam van de indicator is het 
 variabel-label (i.p.v. normaal gesproken het value label)
 
-  o Voorbeeld dichotoom: 
-    Variabellabel: Heeft iets vervelends meegemaakt
-    Waarden: 1 = Ja, 0 = Nee
-    Indicator in Swing: Percentage leerlingen dat iets vervelend heeft meegemaakt.
+ o Voorbeeld dichotoom:
+ - Variabellabel: Heeft iets vervelends meegemaakt
+ - Waarden: 1 = Ja, 0 = Nee
+ - Indicator in Swing: Percentage leerlingen dat iets vervelend heeft meegemaakt.
 
   o Voorbeeld niet-dichotoom:
-  Varriabellabel: Hoe gelukkig ben je?
-  Waarden: 1= Ongelukkig, 2 =Tussen ongelukkig en gelukkig, 3 = Gelukkig
-  Indicatoren in Swing: Percentage Ongelukkig, Percentage Tussen ongelukkig en 
+  - Varriabellabel: Hoe gelukkig ben je?
+  - Waarden: 1= Ongelukkig, 2 =Tussen ongelukkig en gelukkig, 3 = Gelukkig
+  - Indicatoren in Swing: Percentage Ongelukkig, Percentage Tussen ongelukkig en 
   gelukkig, Percentage gelukkig
 
  o Voorbeeld dichotoom fout gecodeerd:
-    Variabellabel: Heeft iets vervelends meegemaakt
-    Waarden: 1 = Ja, 2 = Nee
-    Indicatoren in Swing: Percentage Ja, Percentage Nee
+   - Variabellabel: Heeft iets vervelends meegemaakt
+   - Waarden: 1 = Ja, 2 = Nee
+   - Indicatoren in Swing: Percentage Ja, Percentage Nee
 
 • Zorg ervoor dat variabelen alleen dezelfde variabelnaam(wordt de ‘variabelcode’ in 
 swing) hebben, wanneer deze dezelfde betekenis hebben. Swing ziet alle variabelen 
@@ -53,19 +53,18 @@ met dezelfde code als hetzelfde. Bij dezelfde code zal de oude data met nieuwe d
 aangevuld / overschreven worden.
 
   o Voorbeeld waarbij het misgaat:
+
     Er is een kubusbestand met de kruisvariabele geslacht geüpload uit de kindermonitor. Deze variabele kent twee waarden: Jongens & Meisjes.
     Op een later moment wordt nog een kubusbestand met de kruisvariabele geslacht geüpload uit de volwassen-ouderenmonitor. 
-    Deze variabele kent ook twee waarden: Mannen en Vrouwen.
-    Er kunnen nu twee dingen fout gaan bij het overschrijven data van een bestaande variabelnaam:
-
-    1) Er is overlap in de numerieke waarden achter de valuelabels. De labels Jongens en/of Meisje worden overschreven door Mannen en/of Vrouwen.
-    
-    2) Er is geen overlap in de numerieke waarden achter de valuelabels. Volgens swing zijn er 4 nu geslachten in de variabele geslacht vastgelegd: Jongens, 
+    Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dingen fout gaan bij het overschrijven data van een bestaande variabelnaam.
+		
+   - Er is overlap in de numerieke waarden achter de valuelabels. De labels Jongens en/of Meisje worden overschreven door Mannen en/of Vrouwen.
+   - Er is geen overlap in de numerieke waarden achter de valuelabels. Volgens swing zijn er 4 nu geslachten in de variabele geslacht vastgelegd: Jongens, 
     Meisjes, Mannen en Vrouwen.
+   - Indicatoren in Swing: Percentage Ja, Percentage Nee
 
-    Mogelijke oplossing: Naamconventies. Bijvoorbeeld per monitor; ‘km_geslacht’ en 
-    ‘vo_geslacht’.
-
+ Mogelijke oplossing: Naamconventies. Bijvoorbeeld per monitor; ‘km_geslacht’ en ‘vo_geslacht’.
+    
 Wizard gebruiken
 
 1. Kopieer het .sav-bestand naar de map P:\0. Beveiligd\27. Swing\Kubusdata Monitor 
