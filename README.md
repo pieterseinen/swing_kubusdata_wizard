@@ -18,7 +18,7 @@ Deze labels worden gebruikt voor de naamgeving in Swing. Als de labels kloppen, 
 je wat je geüpload hebt en hoef je achteraf niet handmatig alle namen aan te passen.
 
 • Swing kan indicatornamen aan die maximaal 100 tekens hebben. Als een indicator een 
-langere naam zou krijgen wordt deze naam bij het 99e teken afgeknipt door de Wizard.
+langere naam zou krijgen wordt deze naam bij het 100e teken afgeknipt door de Wizard.
 Als dit is gebeurd zal dat gemeld worden in de popup die aangeeft dat de Wizard klaar 
 is.
 
