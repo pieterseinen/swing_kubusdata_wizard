@@ -54,9 +54,9 @@ aangevuld / overschreven worden.
 
   o Voorbeeld waarbij het misgaat:
 
-    Er is een kubusbestand met de kruisvariabele geslacht geüpload uit de kindermonitor. Deze variabele kent twee waarden: Jongens & Meisjes.
-    Op een later moment wordt nog een kubusbestand met de kruisvariabele geslacht geüpload uit de volwassen-ouderenmonitor. 
-    Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dingen fout gaan bij het overschrijven data van een bestaande variabelnaam.
+Er is een kubusbestand met de kruisvariabele geslacht geüpload uit de kindermonitor. Deze variabele kent twee waarden: Jongens & Meisjes.
+Op een later moment wordt nog een kubusbestand met de kruisvariabele geslacht geüpload uit de volwassen-ouderenmonitor. 
+Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dingen fout gaan bij het overschrijven data van een bestaande variabelnaam.
 		
    - Er is overlap in de numerieke waarden achter de valuelabels. De labels Jongens en/of Meisje worden overschreven door Mannen en/of Vrouwen.
    - Er is geen overlap in de numerieke waarden achter de valuelabels. Volgens swing zijn er 4 nu geslachten in de variabele geslacht vastgelegd: Jongens, 
