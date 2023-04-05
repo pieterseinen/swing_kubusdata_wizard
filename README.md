@@ -71,10 +71,9 @@ Bovenaan global.R worden een aantal instellingen bepaald die specifiek zullen zi
    
 Wizard gebruiken
 
-1. Kopieer het .sav-bestand naar de map P:\0. Beveiligd\27. Swing\Kubusdata Monitor 
-Maken\SPSS data
+1. Kopieer een .sav-bestand naar de map "P:/SPSS data" (of wat er in global.R is ingesteld bij **basismap_spss_bestanden**)
 
-2. Open in de map P:\0. Beveiligd\27. Swing\Kubusdata Wizard de snelkoppeling naar global.R
+2. Open global.R in Rstudio
 
 3. Opstarten
   a. Eerste keer: Klik op het drop-down pijltje naast Run App en selecteer “Run external”
