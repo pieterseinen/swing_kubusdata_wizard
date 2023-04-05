@@ -64,7 +64,11 @@ Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dinge
    - Indicatoren in Swing: Percentage Ja, Percentage Nee
 
  Mogelijke oplossing: Naamconventies. Bijvoorbeeld per monitor; ‘km_geslacht’ en ‘vo_geslacht’.
-    
+
+Wizard Configureren
+Bovenaan global.R worden een aantal instellingen bepaald die specifiek zullen zijn aan de regio/gebruiker. Pas dit aan t/m R12.
+
+   
 Wizard gebruiken
 
 1. Kopieer het .sav-bestand naar de map P:\0. Beveiligd\27. Swing\Kubusdata Monitor 
