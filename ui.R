@@ -6,7 +6,7 @@ ui <- fluidPage(
     id = "swing_wizard",
     type = "hidden",
     
-    header = HTML("<h1> <strong> Monitordata uit SPSS omzetten naar Kubusbestanden voor Swing </strong></h1>"),
+    header = HTML("<h1 style ='text-align:center; height: 50px;'> <strong> Monitordata uit SPSS omzetten naar Kubusbestanden voor Swing </strong></h1>"),
     
     tabPanel("home",
              column(width = 6,
