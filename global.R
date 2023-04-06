@@ -77,13 +77,12 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 
 
 #Kubusdata functie.
-#van loops binnen de functie te meten.
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_jaar = FALSE, jaarvariabele = NULL, is_gewogen = FALSE,
                            weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
                            min_observaties_antwoord = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
                            geen_crossings){
   
-  #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van subsetten ten goede moeten komen
+  #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van verwerking ten goede moeten komen.
   assign("data_totaal",data_totaal, envir = .GlobalEnv)
   
   jaarvariabele_in_data <- NULL
@@ -101,26 +100,25 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   data_totaal <- data_totaal %>% dplyr::select(all_of(gebruikte_variabelen))
   
   
-  #Variabele die increment om voortgang bij te houden
-  #zie rij_per_combinatie_crossings
+  #Teller die huidige variabele bijhoudt om % van voortgang te kunnen weergeven
   huidige_variabele <- 0
   totaal_variabelen <- length(variabelen)
   
   #Variabele die te lange indicatornamen bijhoudt
-  namen_te_lang <<- cbind("variabele" = NULL,"naam" = NULL)
-  #Variabele die bijhoudt of er jaren voor analyse zijn opgegeven waarvoor er geen jaren in de data zitten (voor specifieke variabele) 
+  namen_te_lang <- cbind("variabele" = NULL,"naam" = NULL)
+  #Variabele die bijhoudt of er jaren voor analyse zijn opgegeven die niet in de data zitten (voor een specifieke inhoudelijke variabele) 
   ontbrekende_jaren <- NULL 
-  #lege variabele: Is er een combinatie waarbij alleen maar missings waren
+  
+  #Variabele die bijhoudt of er variabelen waren die icm crossings/jaren/gebiedsindelingen een dataset van 0 observaties opleveren
   missing_variabele  <- c()
   
-  #Variabele die bijhoudt of kubusdata niet opgeslagen kon worden (omdat iemand het te overschrijven bestand in gebruik heeft)
+  #Variabele die bijhoudt of kubusdata niet opgeslagen kon worden (waarschijnlijk omdat iemand het te overschrijven bestand in gebruik heeft)
   var_kubusdata_niet_opgeslagen <- c()
   
-  
-  #variabele die het totaal aantal observaties bijhoudt
+  #Totaal aantal observaties in DF
   aantal_observaties <- nrow(data_totaal)
   
-  #Variabele die bijhoudt obvervaties een missing jaarvariabele hebben
+  #Variabele die bijhoudt of obvervaties een missing jaarvariabele hebben
   missing_jaarvariabele <- 0
   
   #Opgegeven jaren voor analyse ophalen
@@ -166,18 +164,15 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     data_totaal$weegfactor <- 1
   }
   
-  
-  
   #Voor alle variabelen
   lapply(variabelen, function(variabele){
-    
-    
+  
     #Maak een kubus dataframe
     kubus_df <- data_totaal %>%
       filter(.[[jaarvariabele]] %in% jaren_voor_analyse,
              !is.na(.[[variabele]]),
              !is.na(.[[gebiedsindeling]]),
-             across(.cols = all_of(crossings) ,
+             across(.cols = all_of(crossings),
                     .fns = ~ !is.na(.x))) %>%
       mutate(n = 1,
              var = factor(.[[variabele]],
@@ -193,7 +188,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     #Als je een variabele opgeeft die (icm crossings / jaren) alleen maar missing kent crasht de boel.
     #Je kan immers geen kruistabel maken met niks.
     #Als dit het geval is willen we de kubusmaakfunctie vroegtijdig afbreken en een melding geven
-    #Als kubus_df geen rijen telt; zijn er alleen maar missings op de combinatie van
+    #Als kubus_df geen rijen telt; zijn er geen observaties gevonden die non missing hebben op de combinatie van
     #jaar: jaren_voor_analyse,gebiedsindeling, crossings, var
     
     if(nrow(kubus_df) == 0){
@@ -282,27 +277,24 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       variabel_namen <- var_label(data_totaal[[variabele]])
     }
     
-    
     n_labels <- length(variabel_labels)
     
     #Excelbestand maken
     workbook <- createWorkbook()
     
     #Geen_crossings; placeholder var wegstrepen
+    #NB doordat crossings & de bijbehorende dummy variabele niet meer bestaan
+    #Worden bij het opmaken van het ExcelWorkbook automatisch de stappen mbt crossings
+    
     if(geen_crossings){
       crossings <- NULL
-      print(crossings)
       
       kubus_df[,4] <- NULL
-      print(names(kubus_df))
     }
-    
-    
     
     #Data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data")
     writeData(workbook,"Data",kubus_df)
-    
     
     #Definities data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data_def")
@@ -342,7 +334,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       )
       
       
-      #Voor dimensies hebben we een lijst met namen crossings nodig. 
+      #Voor dimensies hebben we een lijst met namen v crossings nodig. 
       #Als variabel_label NULL is wordt de naam "".
       namen_crossings <-  unlist(lapply(crossings,function(x){
         #Naam van een crossing is het var_label
@@ -350,7 +342,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
         
       }))
       
-      #Info over Dimensies toevoegen
+      #Info over Dimensies toevoegen aan WB
       if(!geen_crossings){
         addWorksheet(workbook, sheetName = "Dimensies")
         writeData(workbook,"Dimensies",
@@ -359,13 +351,12 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                         "Naam" = namen_crossings))
         
       }
-      #Sheets voor de de dimensies;
-      #met namen en volgnummers voor de levels van alle crossingvariabelen
+      #Sheets voor de dimensies met namen en volgnummers voor de levels van alle crossingvariabelen
       lapply(crossings, function(crossing){
         
         crossing_labels <- val_labels(data_totaal[[crossing]])
         
-        #Te lange crossing labels afknippen & opslaan in lijst met te lang
+        #Te lange crossing labels afknippen & opslaan in namen_te_lang
         for(label_index in 1:length(crossing_labels)){
           
           naam_label <- names(crossing_labels[label_index])
@@ -382,24 +373,22 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
           }
           
         }  
-        #Per crossing / dimensie een sheet toevoegen        
+        #Per crossing / dimensie een sheet toevoegen      
         addWorksheet(workbook, sheetName = crossing)
         writeData(workbook, crossing, 
                   
                   cbind("Itemcode" =  c(unname(crossing_labels)),
                         "Naam" = names(crossing_labels),
-                        "Volgnr" = seq(1:length(crossing_labels))
+                        "Volgnr" = seq(1:length(crossing_labels)))
                   )
-        )
-        
-      })
+        })
       
       #Tabblad Indicators; 
       addWorksheet(workbook, sheetName = "Indicators")
       
       writeData(workbook, "Indicators",
                 
-                cbind("Indicator code" = 
+                cbind("Indicator code" =
                         #Alle variabel-levels
                         c(
                           glue("{variabele}_{variabel_labels}"),
@@ -413,7 +402,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                           }else{
                             glue("{variabele}_{variabel_labels}_perc")}
                         ),
-                      
                       
                       "Name" = 
                         #Alle variabel-levels
@@ -442,7 +430,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                               #Indicator opbouwen uit; Var-label + val_label
                               var_label <- var_label(data_totaal[[variabele]])
                               
-                              naam_indicator <- glue("{var_label}, {x}") 
+                              naam_indicator <- glue("{var_label}, {x}")
                               
                               #Als de automatische naam indicator te lang is voor Swing: Opknippen & vastleggen
                               if(nchar(naam_indicator) > max_char_labels){
@@ -457,7 +445,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                 
                                 naam_indicator <- glue("{var_label_kort}, {val_label_kort}")
                               }
-                              
                               
                               naam_indicator
                               
@@ -509,6 +496,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                           
                           glue("({indicator_codes}/({str_c(glue('{variabele}_{variabel_labels}'), collapse = '+')}))*100 ")
                         }),
+                      
                       #Zelfde logica als "Unit"
                       "Data type" = c(rep("Numeric",n_labels+2),
                                       #aantal rijen voor percentages = levels variabele
@@ -523,6 +511,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                       1
                                     }else{
                                       rep(1,n_labels)}),
+                      
                       #Treshold opgeven voor percentages. Als een selectie van
                       #dimensies/crossings tot een groepsindeling leidt met minder observaties treshold 
                       #Wordt dit afgeschermd in de mozaieken / viewer van Swing
@@ -532,12 +521,14 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                               min_observaties_antwoord
                                             }else{
                                               rep(min_observaties_antwoord,n_labels)}),
+                      
                       #Cube is overal 1
                       "Cube" = c(rep(1,n_labels+2),
                                  if(is_dichotoom){
                                    1
                                  }else{
                                    rep(1,n_labels)}),
+                      
                       #Source is overal hetzelfde
                       "Source" = c(rep(bron,n_labels+2),
                                    if(is_dichotoom){
@@ -547,8 +538,8 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                       
                 ))
     }
-    #SaveWorkbook in een trycatch zodat applicatie niet crasht bij mislukken van opslaan.
-    #variabelnaam opslaan voor een foutbericht na het uitvoeren van een configuratie
+    #SaveWorkbook in een trycatch om een foutbericht aan de popup aan t eind
+    #te kunnen geven bij mislukken van opslaan
     tryCatch({
       
       saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}.xlsx"), overwrite = TRUE)
@@ -664,7 +655,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   
   melding_lege_groepen <- ""
   if(lege_rijen > 0){
-    print(1)
     melding_lege_groepen <- glue(
       "<strong style= 'color:red'>LET OP!</strong>
       <p>Voor <strong>{lege_rijen}</strong> uit de <strong>{totaal_rijen}</strong> rijen zijn er te weinig of geen observaties gevonden.

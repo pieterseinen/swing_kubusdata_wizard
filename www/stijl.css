@@ -4,10 +4,16 @@ body {
  background-color: #d1d5dd; 
 }
 
-* {
-font-family: "Roboto", sans-serif;
- color: #1a2c54;
+h1 {
+font-family: "Roboto", Sans-Serif;
+ color: #ffffff;
+ background-color:#1a2c54 ;
 
+}
+
+p {
+  font-family: "Roboto", Sans-Serif;
+  font-size: 20;
 }
 
 .box {
@@ -43,5 +49,6 @@ font-weight:800;
 }
 
 li{
-  margin: 10px 0;
+  font-size: 14pt;
+  margin: 15px 0;
 }

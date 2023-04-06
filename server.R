@@ -11,8 +11,8 @@ server <- function(input,output, session){
   spss_data <- reactive({
     
     if(databron_uit_configuratie()){
-      #spss data inlezen uit lees_configuratie
       
+      #spss data inlezen uit lees_configuratie
       df <-  haven::read_spss(configuratie_algemeen()$bestandsnaam,user_na =T) %>%
         labelled::user_na_to_na()
     }else{
@@ -153,21 +153,15 @@ server <- function(input,output, session){
     
     
   }
-  
-  
-  
-  
-  
+
   ####Stap 0: Home ####  
   #Homeknoppen navigeren naar home
   observeEvent(c(input$naar_home1,input$naar_home2,input$naar_home3,input$naar_home4,input$naar_home5,input$naar_home6, input$naar_home7),
                switch_page("home")
   )
-  
-  
-  
-  #Alle 'volgende' knoppen uitschakelen bij opstarten
-  #Deze worden 'enabled' wanneer er aan voorwaarden is voldaan
+ 
+ #Alle 'volgende' knoppen uitschakelen bij opstarten
+ #Deze worden 'enabled' wanneer er aan voorwaarden is voldaan
   observeEvent(session,
                
                #'Volgende' uitzetten
@@ -253,12 +247,10 @@ server <- function(input,output, session){
   #TextInput voor de bestandsnaam van de configuratie
   output$input_bestandsnaam_configuratie <- renderUI({
     
-    
     #Als gegevens uit config komen; invullen in input
     alvast_geselecteerd <- if(databron_uit_configuratie()){
       
       naam_configuratiebestand()
-      
       
     }else{
       NULL
@@ -369,11 +361,9 @@ server <- function(input,output, session){
   #valideer inputs & zet volgende AAN als ze oke zijn.
   inputs_naam_config <- reactive(list(input$bron,
                                       input$bestandsnaam_configuratie,
-                                      input$configuratie_overschrijven)) 
+                                      input$configuratie_overschrijven))
   
-  
-  
-  observeEvent(unlist(inputs_naam_config()) ,{
+  observeEvent(unlist(inputs_naam_config()),{
     
     #Bestaat de bestandsnaam al?
     bestandsnaam_bestaat <- file.exists(glue("{basismap_configuraties}/{input$bestandsnaam_configuratie}.xlsx"))
@@ -383,10 +373,9 @@ server <- function(input,output, session){
       #Laat checkbox voor overschrijven zien
       shinyjs::show("input_configuratie_overschrijven")
       
-    } else{
+    }else{
       shinyjs::hide("input_configuratie_overschrijven")
     }
-    
     
     #De bestandsnaam is prima waneer er iets is ingevuld EN deze naam nog niet bestaat, of overschreven mag worden
     bestandsnaam_ok <- nchar(input$bestandsnaam_configuratie) > 0 & (!bestandsnaam_bestaat |  isTruthy(input$configuratie_overschrijven))
@@ -394,13 +383,11 @@ server <- function(input,output, session){
     #Bron is prima wanneer er iets is gekozen
     bron_ok <- input$bron != "Kies een bron"
     
-    
     if(bestandsnaam_ok & bron_ok){
       shinyjs::enable("naar_variabelen_en_crossings1")
     }else{
       shinyjs::disable("naar_variabelen_en_crossings1")
     } 
-    
     
   })
   
@@ -410,10 +397,10 @@ server <- function(input,output, session){
   
   observeEvent(variabelen_en_crossings_navigatie(),
                if(any(variabelen_en_crossings_navigatie() > 0)){
+                 
                  switch_page("variabelen_en_crossings")
                  
-               }
-  )
+               })
   
   #### UI/Inputs Variabelen en Crossings####
   #Input voor crossings#
@@ -432,7 +419,6 @@ server <- function(input,output, session){
     
     
   })
-  
   
   #Als er wordt gekozen voor platte data/"Geen crossings"
   
@@ -793,10 +779,9 @@ server <- function(input,output, session){
     
   })
   
-  #ReactivVal om bestandsnaam configuratie in op te slaan
+  #ReactiveVal om bestandsnaam configuratie in op te slaan
   #Wordt bijgewerkt bij lezen van configuratie / opslaan van nieuwe configuratie
   #Vult 'alvast_geselecteerd' voor input$bestandsnaam_configuratie
-  
   
   #Knop: Configuratie opslaan
   output$input_maak_configuratie <- renderUI({

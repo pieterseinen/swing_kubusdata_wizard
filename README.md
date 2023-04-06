@@ -61,7 +61,6 @@ Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dinge
    - Er is overlap in de numerieke waarden achter de valuelabels. De labels Jongens en/of Meisje worden overschreven door Mannen en/of Vrouwen.
    - Er is geen overlap in de numerieke waarden achter de valuelabels. Volgens swing zijn er 4 nu geslachten in de variabele geslacht vastgelegd: Jongens, 
     Meisjes, Mannen en Vrouwen.
-   - Indicatoren in Swing: Percentage Ja, Percentage Nee
 
  Mogelijke oplossing: Naamconventies. Bijvoorbeeld per monitor; ‘km_geslacht’ en ‘vo_geslacht’.
 
