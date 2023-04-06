@@ -1,12 +1,12 @@
 server <- function(input,output, session){
   
-#### Data & Configuratiebestanden ####
+  #### Data & Configuratiebestanden ####
   
-#Reactive df met SPSS data. 
+  #Reactive df met SPSS data. 
   #Wordt opgehaald uit fileinput OF configuratie
   #Reactiveval die bijhoudt waar de data opgehaald moet worden 
   databron_uit_configuratie <- reactiveVal(F)
-
+  
   #Dataframe
   spss_data <- reactive({
     
@@ -29,7 +29,11 @@ server <- function(input,output, session){
     var_label(df$Regiovar_met_uniekenaam) <- "Regio"
     val_label(df$Regiovar_met_uniekenaam, nr_regio) <- naam_regio 
     
-    df
+    #o.b.v. verzoek om ook platte data uit te kunnen draaien; Zelfde trucje met crossings;  
+    df$dummy_crossing <- 1
+    var_label(df$dummy_crossing) <- "Dummy crossing"
+    val_label(df$dummy_crossing, 1) <- "Dummy waarde"
+
   })
   
   #Apparte reactive voor bestandsnaam (t.b.v het wegschrijven van configuratie)
@@ -47,11 +51,11 @@ server <- function(input,output, session){
     kolommen <- names(spss_data())
   })
   
-#Configuratie
+  #Configuratie
   #str die vastlegt waar de configuratie uit gelzen moet worden
   locatie_configuratiebestand <- reactiveVal("leeg")
   
-
+  
   #trigger(): arbitraire reactiveVal die veranderd als een configuratie veranderd
   #Dit is nodig om ervoor te zorgen dat de configuratie_... reactive dataframes altijd updaten. 
   
@@ -68,10 +72,10 @@ server <- function(input,output, session){
     if(is.list(input$configuratie_bestand)){
       
       databron_uit_configuratie(T)
-    
+      
       #Naam configuratiebestand uit fileinput halen
       naam_configuratiebestand(str_remove(input$configuratie_bestand$files$`0`[[2]],".xlsx"))
-
+      
       #configuratie_gelezen(T)
       locatie_configuratiebestand(glue("{basismap_configuraties}/{input$configuratie_bestand$files$`0`[[2]]}"))
       
@@ -83,83 +87,84 @@ server <- function(input,output, session){
   
   
   #data uit gelezen configuratie ophalen
-    #df algemene instellingen
-    configuratie_algemeen <- reactive({
-      req(locatie_configuratiebestand() != "leeg")
-      x <- trigger()
-      
-      openxlsx::read.xlsx(locatie_configuratiebestand(), sheet = "algemeen")
-      
-      
-    })
-    #Vector met gekozen variabelen
-    configuratie_variabelen <- reactive({
-      req(locatie_configuratiebestand() != "leeg")
-      x <- trigger()
-      openxlsx::read.xlsx(req(locatie_configuratiebestand()), sheet = "variabelen")$variabelen
-    })
+  #df algemene instellingen
+  configuratie_algemeen <- reactive({
+    req(locatie_configuratiebestand() != "leeg")
+    x <- trigger()
     
-    #Vector met gekozen crossings
-    configuratie_crossings <- reactive({
-      req(locatie_configuratiebestand() != "leeg")
-      x <- trigger()
-      
-      openxlsx::read.xlsx(req(locatie_configuratiebestand()), sheet = "crossings")$crossings
-      
-    })
+    openxlsx::read.xlsx(locatie_configuratiebestand(), sheet = "algemeen")
     
     
-    #Functie om configuratie op te slaan. In een functie gezet om het kopieren van code te voorkomen
-    #Ik zou een functie normaal gesproken in global.R zetten, maar op deze manier hoeven we geen argumenten
-    #aan de functie te geven omdat alle objecten in de functie al binnen de scope van sessie bestaan
+  })
+  #Vector met gekozen variabelen
+  configuratie_variabelen <- reactive({
+    req(locatie_configuratiebestand() != "leeg")
+    x <- trigger()
+    openxlsx::read.xlsx(req(locatie_configuratiebestand()), sheet = "variabelen")$variabelen
+  })
+  
+  #Vector met gekozen crossings
+  configuratie_crossings <- reactive({
+    req(locatie_configuratiebestand() != "leeg")
+    x <- trigger()
     
-    sla_configuratie_op <- function(){
-      workbook <- createWorkbook()
-      
-      #Algemene instellingen toevoegen
-      addWorksheet(workbook, sheetName = "algemeen")
-      writeData(workbook, sheet = "algemeen",
-                cbind("bestandsnaam" = spss_bestandsnaam(),
-                      "bron" = input$bron,
-                      "meer_jaren_in_bestand" = input$is_meer_jaar,
-                      "jaarvariabele" = ifelse(input$is_meer_jaar, input$jaarvariabele,
-                                               input$type_periode),
-                      "jaren_voor_analyse" = ifelse(input$is_meer_jaar, str_c(input$jaren_analyse,collapse = ","),
-                                                    input$naam_periode),
-                      "is_gewogen" = input$is_gewogen,
-                      "strata" = input$strata,
-                      "weegfactor" = if(input$is_gewogen){input$weegfactor}else{""} ,
-                      "gebiedsniveau" = input$gebiedsniveau,
-                      "gebiedsindeling" = 
-                        if(input$gebiedsniveau == "ggd"){"Regiovar_met_uniekenaam"}else{
-                          input$gebiedsindeling},
-                      "minimum_observaties" = input$minimum_observaties)
-      )
-      
-      #Variabelen toevoegen
-      addWorksheet(workbook, sheetName = "variabelen")
-      writeData(workbook, sheet = "variabelen", c("variabelen",input$variabelen))
-      
-      #Crossings toevoegen
-      addWorksheet(workbook, sheetName = "crossings")
-      writeData(workbook, sheet = "crossings", c("crossings",input$crossings))
-      
-      saveWorkbook(workbook, glue("{basismap_configuraties}/{input$bestandsnaam_configuratie}.xlsx"), overwrite = T)
-      
-      
-    }
+    openxlsx::read.xlsx(req(locatie_configuratiebestand()), sheet = "crossings")$crossings
+    
+  })
+  
+  
+  #Functie om configuratie op te slaan. In een functie gezet om het kopieren van code te voorkomen
+  #Ik zou een functie normaal gesproken in global.R zetten, maar op deze manier hoeven we geen argumenten
+  #aan de functie te geven omdat alle objecten in de functie al binnen de scope van sessie bestaan
+  
+  sla_configuratie_op <- function(){
+    workbook <- createWorkbook()
+    
+    #Algemene instellingen toevoegen
+    addWorksheet(workbook, sheetName = "algemeen")
+    writeData(workbook, sheet = "algemeen",
+              cbind("bestandsnaam" = spss_bestandsnaam(),
+                    "bron" = input$bron,
+                    "meer_jaren_in_bestand" = input$is_meer_jaar,
+                    "jaarvariabele" = ifelse(input$is_meer_jaar, input$jaarvariabele,
+                                             input$type_periode),
+                    "jaren_voor_analyse" = ifelse(input$is_meer_jaar, str_c(input$jaren_analyse,collapse = ","),
+                                                  input$naam_periode),
+                    "is_gewogen" = input$is_gewogen,
+                    "strata" = input$strata,
+                    "weegfactor" = if(input$is_gewogen){input$weegfactor}else{""} ,
+                    "gebiedsniveau" = input$gebiedsniveau,
+                    "gebiedsindeling" = 
+                      if(input$gebiedsniveau == "ggd"){"Regiovar_met_uniekenaam"}else{
+                        input$gebiedsindeling},
+                    "minimum_observaties" = input$minimum_observaties,
+                    "geen_crossings" = input$geen_crossings)
+    )
+    
+    #Variabelen toevoegen
+    addWorksheet(workbook, sheetName = "variabelen")
+    writeData(workbook, sheet = "variabelen", c("variabelen",input$variabelen))
+    
+    #Crossings toevoegen
+    addWorksheet(workbook, sheetName = "crossings")
+    writeData(workbook, sheet = "crossings", c("crossings",input$crossings))
+    
+    saveWorkbook(workbook, glue("{basismap_configuraties}/{input$bestandsnaam_configuratie}.xlsx"), overwrite = T)
     
     
+  }
   
   
   
-####Stap 0: Home ####  
+  
+  
+  ####Stap 0: Home ####  
   #Homeknoppen navigeren naar home
   observeEvent(c(input$naar_home1,input$naar_home2,input$naar_home3,input$naar_home4,input$naar_home5,input$naar_home6, input$naar_home7),
                switch_page("home")
-               )
+  )
   
-
+  
   
   #Alle 'volgende' knoppen uitschakelen bij opstarten
   #Deze worden 'enabled' wanneer er aan voorwaarden is voldaan
@@ -175,75 +180,75 @@ server <- function(input,output, session){
                         "configuratie_opslaan"
                         #,"maak_kubusdata",
                         #"naar_opslaan"
-                        ), function(x){
+               ), function(x){
                  
                  shinyjs::disable(x)
                  
                })
   )
   
-
-
-####Stap 1: kies_data####
+  
+  
+  ####Stap 1: kies_data####
   #### Navigatie naar Kies Data ####
   #Navigatie: Van home naar naar kies_data  
-    kies_data_navigatie <- reactive(list(input$naar_kies_data1,input$naar_kies_data2))
+  kies_data_navigatie <- reactive(list(input$naar_kies_data1,input$naar_kies_data2))
   
-    observeEvent(kies_data_navigatie(),
-                 if(any(kies_data_navigatie() > 0)){  
+  observeEvent(kies_data_navigatie(),
+               if(any(kies_data_navigatie() > 0)){  
                  switch_page("kies_data")}
-                 )
-
+  )
+  
   #### UI/Inputs voor Kies Data ####
   #FileInput voor SPSS bestand
   shinyFileChoose(input, 'spss_bestand', roots=c(wd = basismap_spss_bestanden), filetypes = c('','sav'))
   
   #DF met basale info over spss bestand 
-    output$spss_data_preview <- function(){
-      
-      validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = "Lees een SPSS bestand"))
-      data.frame(
-        "Bestandsnaam" = spss_bestandsnaam(),
-        "Aantal observaties" = nrow(spss_data()),
-        "Aantal variabelen" = ncol(spss_data())) %>%
-        knitr::kable("html")%>%
-        kable_styling("striped", full_width = F) %>%
-        add_header_above(c("Dataset" = 3))
-      
-      
-      
-    }
+  output$spss_data_preview <- function(){
     
+    validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = "Lees een SPSS bestand"))
+    data.frame(
+      "Bestandsnaam" = spss_bestandsnaam(),
+      "Aantal observaties" = nrow(spss_data()),
+      "Aantal variabelen" = ncol(spss_data())) %>%
+      knitr::kable("html")%>%
+      kable_styling("striped", full_width = F) %>%
+      add_header_above(c("Dataset" = 3))
+    
+    
+    
+  }
+  
   #### Voorwaarden Kies Data ####
   #Voorwaarden voor volgende pagina:
   #bij upload spss_bestand: Databron uit Input & Enable knop 'volgende'
-    observeEvent(c(input$spss_bestand),{
+  observeEvent(c(input$spss_bestand),{
+    
+    if(is.list(input$spss_bestand)){
+      
+      #databron komt uit upload ipv configuratie
+      databron_uit_configuratie(F)
+      
+      #Knop 'Volgende' aanzetten
+      shinyjs::enable("naar_naam_config1")
+    }else if(databron_uit_configuratie()){
+      shinyjs::enable("naar_naam_config1")
+    }
+    
+  })
   
-      if(is.list(input$spss_bestand)){
-        
-        #databron komt uit upload ipv configuratie
-        databron_uit_configuratie(F)
-        
-        #Knop 'Volgende' aanzetten
-        shinyjs::enable("naar_naam_config1")
-      }else if(databron_uit_configuratie()){
-        shinyjs::enable("naar_naam_config1")
-        }
-        
-      })
-
   
   
-#### Stap 2: naam_config ####
+  #### Stap 2: naam_config ####
   #### Navigatie naar Naam Configuratie #####
   naam_config_navigatie <- reactive(list(input$naar_naam_config1,input$naar_naam_config2))
   #naar naam_config
   observeEvent(naam_config_navigatie(),
                if(any(naam_config_navigatie() > 0))
-               switch_page("naam_config")
-               )
+                 switch_page("naam_config")
+  )
   
-
+  
   #### UI/Inputs Naam Configuratie####
   #TextInput voor de bestandsnaam van de configuratie
   output$input_bestandsnaam_configuratie <- renderUI({
@@ -253,7 +258,7 @@ server <- function(input,output, session){
     alvast_geselecteerd <- if(databron_uit_configuratie()){
       
       naam_configuratiebestand()
-
+      
       
     }else{
       NULL
@@ -367,26 +372,26 @@ server <- function(input,output, session){
                                       input$configuratie_overschrijven)) 
   
   
-
+  
   observeEvent(unlist(inputs_naam_config()) ,{
     
     #Bestaat de bestandsnaam al?
     bestandsnaam_bestaat <- file.exists(glue("{basismap_configuraties}/{input$bestandsnaam_configuratie}.xlsx"))
-
+    
     #Als er al een config bestaat met zelfde bestandsnaam: overschrijven?
     if(bestandsnaam_bestaat){
       #Laat checkbox voor overschrijven zien
       shinyjs::show("input_configuratie_overschrijven")
-
+      
     } else{
       shinyjs::hide("input_configuratie_overschrijven")
     }
-
+    
     
     #De bestandsnaam is prima waneer er iets is ingevuld EN deze naam nog niet bestaat, of overschreven mag worden
     bestandsnaam_ok <- nchar(input$bestandsnaam_configuratie) > 0 & (!bestandsnaam_bestaat |  isTruthy(input$configuratie_overschrijven))
     
-    #Bron is prima wanneer er iets is ingevuld
+    #Bron is prima wanneer er iets is gekozen
     bron_ok <- input$bron != "Kies een bron"
     
     
@@ -395,20 +400,20 @@ server <- function(input,output, session){
     }else{
       shinyjs::disable("naar_variabelen_en_crossings1")
     } 
-           
-
+    
+    
   })
   
-#### Stap 3 Variabelen en Crossings ####
+  #### Stap 3 Variabelen en Crossings ####
   #### Navigatie naar variabelen en crossings####
   variabelen_en_crossings_navigatie <- reactive(list(input$naar_variabelen_en_crossings1,input$naar_variabelen_en_crossings2))
   
   observeEvent(variabelen_en_crossings_navigatie(),
                if(any(variabelen_en_crossings_navigatie() > 0)){
-                   switch_page("variabelen_en_crossings")
-                   
-                 }
-               )
+                 switch_page("variabelen_en_crossings")
+                 
+               }
+  )
   
   #### UI/Inputs Variabelen en Crossings####
   #Input voor crossings#
@@ -429,26 +434,52 @@ server <- function(input,output, session){
   })
   
   
+  #Als er wordt gekozen voor platte data/"Geen crossings"
+  
+  #Voor gebruikersgemak; reactiveVal die eerder geselecteerde crossings opslaat
+  #zodat selecties niet verdwijnen bij het terugwisselen naar 'wel crossings'
+  opgeslagen_crossings <- reactiveVal()
+  
+  observeEvent(input$geen_crossings,{
+    
+    if(input$geen_crossings){
+      
+      shinyjs::hide("input_crossings")
+      
+      #input bijwerken om dummy crossing te selecteren
+      updateMultiInput(session, inputId = "crossings", selected = "dummy_crossing")
+      #eventuele eerdere selectie crossings opslaan
+      opgeslagen_crossings(input$crossings)
+      
+    }else{
+      
+      #eerder geselecteerde crossings invoeren in input
+      updateMultiInput(session, inputId = "crossings", selected = opgeslagen_crossings())
+      
+      shinyjs::show("input_crossings")
+      
+    }
+  })
   #Input voor variabelen #
   
   #Picker Inputveld voor variabelen
   output$input_variabelen <- renderUI({
     validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = ""))
     
-
+    
     #Als een config bewerkt wordt: Input vullen met gegevens uit config
     alvast_geselecteerd_uit_config <- if(databron_uit_configuratie()){
-
-        configuratie_variabelen()
-    
+      
+      configuratie_variabelen()
+      
     }else{
       NULL
-      }
+    }
     
-
+    
     #Variabelen uit alternatieve invoer ophalen
     geselecteerd_door_plakken <- geplakte_variabelen()
-
+    
     #Unique over gecombineerde vector v. config & geplakte variabelen zodat overlap in variabelnamen
     #tussen beide geen issue is.    
     alvast_geselecteerd <- unique(c(geselecteerd_door_plakken,alvast_geselecteerd_uit_config))
@@ -491,15 +522,15 @@ server <- function(input,output, session){
   inputs_variabelen_en_crossings <- reactive(list(input$variabelen,input$crossings)) 
   
   observeEvent(unlist(inputs_variabelen_en_crossings()),{
-
+    
     if(length(input$variabelen) > 0 & length(input$crossings) > 0){
       shinyjs::enable("naar_periode1")
     }else{
       shinyjs::disable("naar_periode1")
     }
   })
-
-#### Stap 4 Periode ####
+  
+  #### Stap 4 Periode ####
   #### Navigatie naar Periode####
   periode_knoppen <- reactive(list(input$naar_periode1,input$naar_periode2))
   
@@ -507,7 +538,7 @@ server <- function(input,output, session){
                if(any(periode_knoppen() > 0)){
                  switch_page("periode")
                }
-    
+               
   )
   
   #### UI/Inputs Perioden####
@@ -552,16 +583,16 @@ server <- function(input,output, session){
     validate(need((is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg") & input$jaarvariabele != "Kies een variabele", message = ""))
     
     jaren_in_data <- unique(spss_data()[[input$jaarvariabele]])
- 
+    
     alvast_geselecteerd <- if(databron_uit_configuratie()){
-        
-        configuratie_algemeen()$jaren_voor_analyse %>%
-          str_split(",")%>%
-          unlist()%>%
-          as.numeric()
-        
+      
+      configuratie_algemeen()$jaren_voor_analyse %>%
+        str_split(",")%>%
+        unlist()%>%
+        as.numeric()
+      
     }else{
-        NULL
+      NULL
     }
     
     multiInput(inputId = "jaren_analyse",
@@ -606,7 +637,7 @@ server <- function(input,output, session){
   periode_inputs <- reactive(list(input$is_meer_jaar,input$jaarvariabele,input$jaren_analyse, input$type_periode,input$naam_periode))
   
   observeEvent(periode_inputs(),{
-
+    
     if(isTruthy(input$is_meer_jaar)){
       #Relevante inputs tonen en verbergen
       shinyjs::hide("input_type_periode")
@@ -617,16 +648,16 @@ server <- function(input,output, session){
       #Is er een var geselecteerd & zijn er jaren uitgekozen?
       if(isTruthy(input$jaarvariabele != "Kies een variabele") & isTruthy(length(input$jaren_analyse) > 0 )){
         
-          shinyjs::enable("naar_gebiedsindeling1")
-          
-        }else{
-          
-          shinyjs::disable("naar_gebiedsindeling1")
-          
-        }
-      #Als input$is_meer_jaar == F
+        shinyjs::enable("naar_gebiedsindeling1")
+        
       }else{
-        #Relevante inputs tonen en verbergen
+        
+        shinyjs::disable("naar_gebiedsindeling1")
+        
+      }
+      #Als input$is_meer_jaar == F
+    }else{
+      #Relevante inputs tonen en verbergen
       shinyjs::show("input_type_periode")
       shinyjs::show("input_naam_periode")
       shinyjs::hide("input_jaarvariabele")
@@ -637,19 +668,19 @@ server <- function(input,output, session){
       }else{
         shinyjs::disable("naar_gebiedsindeling1")
       }
-        
-      }
-
+      
+    }
+    
   })
   
-#### Stap 5: Gebiedsindeling ####  
+  #### Stap 5: Gebiedsindeling ####  
   #### Navigatie naar Gebiedsindeling ####
   knoppen_gebiedsindeling <- reactive(list(input$naar_gebiedsindeling1,input$naar_gebiedsindeling2))
   
   observeEvent(knoppen_gebiedsindeling(),
                if(any(knoppen_gebiedsindeling() > 0))
-               switch_page("gebiedsindeling")
-               )
+                 switch_page("gebiedsindeling")
+  )
   #### UI/Inputs Gebiedsindeling ####
   #Gebiedsniveau, huidige opties: ggd / gemeente
   output$input_gebiedsniveau <- renderUI({
@@ -690,26 +721,26 @@ server <- function(input,output, session){
   
   observeEvent(inputs_gebiedsindeling(),{
     
-               req(input$gebiedsniveau)
+    req(input$gebiedsniveau)
     
-               if(input$gebiedsniveau == "gemeente"){
-                 
-                 shinyjs::show("gebiedsindeling")
-                 
-                 if(input$gebiedsindeling == "Kies een variabele"){
-                   disable("naar_gewogen")
-                 }else{
-                   enable("naar_gewogen")
-                 }
-                #Als selectie ggd is: 
-               }else{
-                 
-                shinyjs::hide("gebiedsindeling")
-                shinyjs::enable("naar_gewogen")
-               }
+    if(input$gebiedsniveau == "gemeente"){
+      
+      shinyjs::show("gebiedsindeling")
+      
+      if(input$gebiedsindeling == "Kies een variabele"){
+        disable("naar_gewogen")
+      }else{
+        enable("naar_gewogen")
+      }
+      #Als selectie ggd is: 
+    }else{
+      
+      shinyjs::hide("gebiedsindeling")
+      shinyjs::enable("naar_gewogen")
+    }
   })
-
-#### Stap 6: Gewogen / Min observaties ####
+  
+  #### Stap 6: Gewogen / Min observaties ####
   #### Navigatie naar Gewogen ####
   observeEvent(input$naar_gewogen,{
     
@@ -765,7 +796,7 @@ server <- function(input,output, session){
   #ReactivVal om bestandsnaam configuratie in op te slaan
   #Wordt bijgewerkt bij lezen van configuratie / opslaan van nieuwe configuratie
   #Vult 'alvast_geselecteerd' voor input$bestandsnaam_configuratie
- 
+  
   
   #Knop: Configuratie opslaan
   output$input_maak_configuratie <- renderUI({
@@ -775,7 +806,7 @@ server <- function(input,output, session){
         #Knop alleen renderen wanneer de volgende parameters ingevuld zijn:
         #crossings, variabelen, gebiedsindeling
         (nchar(input$crossings) > 0 && nchar(input$variabelen) > 0 &&
-        (input$gebiedsniveau == "ggd" || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
+           (input$gebiedsniveau == "ggd" || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
          
         ), message = ""))
     
@@ -821,11 +852,11 @@ server <- function(input,output, session){
     }else{
       shinyjs::enable("configuratie_opslaan")
     }
-               
+    
   })
   
   
-#### Stap 7: Configuratie lezen ####
+  #### Stap 7: Configuratie lezen ####
   #### Navigatie: Configuratie Lezen ####
   observeEvent(input$naar_lees, switch_page("lees_configuratie"))
   
@@ -841,7 +872,7 @@ server <- function(input,output, session){
     shinyjs::enable("naar_naam_config1")
     
   })
-
+  
   #### UI /Inputs voor Configuratie Lezen ####
   
   #Input voor configuratiebestand
@@ -868,8 +899,8 @@ server <- function(input,output, session){
     gekozen_map(glue("{basismap_output}/{geselecteerde_map}")) 
     
     
-    }
-    )
+  }
+  )
   #UI die laat zien welke/of er een map is gekozen
   output$geen_map_gekozen <- renderUI({
     
@@ -878,7 +909,7 @@ server <- function(input,output, session){
     }else{
       HTML(glue("<h3><strong> Bestemming kubusdata:</strong><br> {gekozen_map()}</h3>"))
     }
-
+    
   })
   
   
@@ -896,38 +927,40 @@ server <- function(input,output, session){
   
   #Knop voor maken kubusdata.
   output$knop_maak_kubusdata <- renderUI({
-
+    
     disabled(
       actionButton("maak_kubusdata",
                    "Maak een swing kubusbestand",
                    icon = icon("rocket"),
                    style = "height:100px; width: 100%; font-size: 200%;")
     )
-
+    
   })
   
   #Waarschuwing bij problemen met labels
   observeEvent(is.list(input$configuratie_bestand) | input$swing_wizard == "lees_configuratie" | is.list(input$folder),{
     
     if(input$swing_wizard == "lees_configuratie"){
-    #Als er ergens een label ontbreekt:
-    if(!(crossing_labels_compleet() & variabele_labels_compleet() & gebiedsindeling_labels_compleet())){
-
-      sendSweetAlert(session = session,
-                     title = "Fout",
-                     text = "Er zijn variabelen/crossings/gebiedsindelingen waarbij de labels niet compleet zijn.
-                      Pas dit aan in SPSS, of verwijder deze variabelen.",
-                     type = "error")
       
-      disable("knop_maak_kubusdata")
-
-    }else{
-      if(is.list(input$folder) & length(unlist(input$folder[[1]])) < 2){
+      if(!(crossing_labels_compleet() & variabele_labels_compleet() & gebiedsindeling_labels_compleet())){
+        
+        sendSweetAlert(session = session,
+                       title = "Fout",
+                       text = "Er zijn variabelen/crossings/gebiedsindelingen waarbij de labels niet compleet zijn.
+                      Pas dit aan in SPSS, of verwijder deze variabelen.",
+                       type = "error")
+        
+        disable("knop_maak_kubusdata")
+        
+      }else{
         
         
-      enable("knop_maak_kubusdata")
+        if(is.list(input$folder) & (!length(unlist(input$folder[[1]])) < 2)){
+          
+          
+          enable("knop_maak_kubusdata")
+        }
       }
-    }
     }
   })
   
@@ -943,7 +976,7 @@ server <- function(input,output, session){
                   #total = 100,
                   title = "",
                   display_pct = T)
-      )
+    )
   }
   
   #Optie om alleen data sheets te uploaden
@@ -954,6 +987,13 @@ server <- function(input,output, session){
     #Popup laten zien die voortgang bijhoudt
     showModal(voortgang())
     
+    #Proberen om parameter geen_crossings op te halen. Als het niet lukt: FALSE
+    #Optie om zonder crossings te draaien is nieuw. Er zijn nu veel configuraties
+    #in gebruik zonder deze parameter. Op deze manier crasht de applicatie niet
+    #bij oude configuraties & wordt standaard FALSE meegegeven
+    geen_crossings <- try(configuratie_algemeen()$geen_crossings, silent = T)
+    if(is.null(geen_crossings))
+      geen_crossings <- F
     
     maak_kubusdata(data_totaal = spss_data(),
                    
@@ -970,7 +1010,8 @@ server <- function(input,output, session){
                    bron = configuratie_algemeen()$bron,
                    session = session,
                    gekozen_map = gekozen_map(),
-                   alleen_data = input$alleen_data
+                   alleen_data = input$alleen_data, 
+                   geen_crossings = geen_crossings
     )
   })
   
@@ -995,7 +1036,7 @@ server <- function(input,output, session){
       variabele_value_labels <-names(val_labels(spss_data()[[x]]))
       if(is.null(variabele_value_labels)){variabele_value_labels <- NA}
       
-
+      
       
       
       cbind("variabele" = x,
@@ -1099,13 +1140,13 @@ server <- function(input,output, session){
     if(is.null(variabele_values)){variabele_values <- NA}
     if(is.null(variabele_value_labels)){variabele_value_labels <- NA}
     
-                                    
+    
     data.frame(
       "variabele" = variabele_gebied,
       "variabele_label" = variabele_label,
       "values" = variabele_values,
       "value_labels" = variabele_value_labels
-      )
+    )
     
     
     
@@ -1131,11 +1172,11 @@ server <- function(input,output, session){
       add_header_above(c("Gebiedsindeling" = 4))%>%
       scroll_box(height = "500px")
   }
- 
   
   
   
-
+  
+  
 }
 
 
