@@ -24,7 +24,7 @@ is.
 
 Automatisch worden namen van indicatoren als volgt toegewezen:
 - Dichotoom: {variabel_label}
-- Niet dichotoom: {variabel_label} + ‘,’ {value_label}
+- Niet dichotoom: {variabel_label}‘,’{value_label}
 
 • Om te zorgen dat een variabele als dichotoom/binair herkend wordt, moeten ze met de 
 waarden 0/1 gecodeerd zijn. Het script maakt bij een dichotome variabele slechts één 
@@ -66,7 +66,7 @@ Deze variabele kent ook twee waarden: Mannen en Vrouwen. Er kunnen nu twee dinge
  Mogelijke oplossing: Naamconventies. Bijvoorbeeld per monitor; ‘km_geslacht’ en ‘vo_geslacht’.
 
 Wizard Configureren
-Bovenaan global.R worden een aantal instellingen bepaald die specifiek zullen zijn aan de regio/gebruiker. Pas dit aan t/m R12.
+Bovenaan global.R worden een aantal instellingen bepaald die specifiek zullen zijn aan de regio/gebruiker. Pas dit aan t/m R12. De Wizard is bedoeld om vanuit een lokale R installatie te gebruiken.
 
    
 Wizard gebruiken
@@ -90,7 +90,7 @@ Wizard gebruiken
 6. Een configuratie lezen
   a. Klik op Lees een bestaande configuratie
   b. Klik bij Selecteer een configuratiebestand op Browse en selecteer een .xlsx bestand. Het laden van de configuratie & bijbehorende dataset kan enkele seconden duren.
-    i. (Optioneel) Kies Configuratie bewerken om naar 'Maak een configuratie' te gaan en de huidige instellingen te wijzigen.
+    i. (Optie) Kies Configuratie bewerken om naar 'Maak een configuratie' te gaan en de huidige instellingen te wijzigen.
 
 7. Een configuratie uitvoeren (na stap 5 of 6)
   a. Klik op Selecteer een map voor kubusdata en kies een map waar de output opgeslagen 
@@ -98,5 +98,5 @@ Wizard gebruiken
   b. Kies Maak een Swing kubusbestand om de configuratie uit te voeren
   c. Wanneer de configuratie is uitgevoerd verschijnt een popup met meldingen over
   het verwerken van de configuratie. Lees dit goed.
-  d. De kubusdata is nu te vinden in de gekozen map onder P:\0. Beveiligd\27. Swing\Data 
+  d. De kubusdata is nu te vinden in de gekozen map (in te stellen bovenin global.R) 
   voor Swing als .xlsx bestanden voor elke variabele. Controleer de resultaten.
