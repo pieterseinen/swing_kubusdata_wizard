@@ -1,17 +1,32 @@
-#Algemene parameters
-basismap_output <- "P:/Data voor Swing"
-basismap_spss_bestanden <- "P:/SPSS data"
-basismap_configuraties <- "P:/Configuraties"
+#Algemene instellingen
+basismap_output <- "P:/0. Beveiligd/27. Swing/Data voor Swing"
+basismap_spss_bestanden <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/SPSS data"
+basismap_configuraties <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/Configuraties"
 
 nr_regio <- 2014
 naam_regio <- "Gelderland-Zuid"
 
-missing_voor_privacy <- -99996
-minimum_obs_per_rij <- 2
+#Swing herkent (verschillende instelbare) waarden die missing aangeven 
 
+#Convenant stelt dat 'microdata' niet gedeeld mag worden met 3en. 
+#GGDGHOR verstaat daaronder ook groepsindelingen van 1.
+#Minimum aantal observaties per groepsindeling waarbij data geupload mag worden naar ABF 
+minimum_obs_per_rij <- 2
+#Waarde -99997 past bij Swings default Special value voor 'empty'
+missing_voor_convenant <- -99997
+
+#Privacymensen van een aantal GGD'en zijn van mening dat data van antwoorden met minder dan
+#5 respondenten niet gepubliceerd mogen worden vanwege herleidbaarheid. Gebruiker kan zelf een minimum instellen.
+#Waarde -99996 past bij Swings default special value voor 'hidden'
+missing_voor_privacy <- -99996
+
+
+#Swing kan labels van maximaal 100 tekens verwerken. Automatische naamgeving
+#maakt zonodig kortere labels door arbitrair het einde van een var/val-label af te knippen.
+#Er wordt een waarschuwing aan de gebruiker gegeven dat dit gebeurd is.
 max_char_labels <- 100
 
-#Shiny dingen
+#Shiny libraries
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
@@ -35,7 +50,7 @@ library(tidyr)
 #Opties:
 options(stringsAsFactors = F,
         shiny.maxRequestSize=200*1024^2 #Max filesize
-)
+        )
 
 ####Helperfuncties####
 
@@ -47,51 +62,51 @@ switch_page <- function(page) {
 
 #Navigatieknoppen: Functie om knoppen vorige, home, volgende te maken
 navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
-  div(style = "position: absolute; bottom: 0; left: 0; right: 0",  
-      
-      column(offset = 1,
-             3,
-             actionButton(inputId = vorige,
-                          label ="Vorige",
-                          icon = icon("fa-sharp fa-solid fa-arrow-left",
-                                      verify_fa = F),
-                          style = "height:100px; width: 100%; font-size: 200%;")
-      ),
-      column(3,
-             actionButton(inputId = home,
-                          label = "Home",
-                          icon = icon("home"),
-                          style = "height:100px; width: 100%; font-size: 200%;")
-      ),
-      column(3,
-             
-             actionButton(inputId = volgende,
-                          label = div("Volgende",icon("fa-sharp fa-solid fa-arrow-right",
-                                                      verify_fa = FALSE)),
-                          style = "height:100px; width: 100%; font-size: 200%;")
-             
-             
-      )
+ div(style = "position: absolute; bottom: 0; left: 0; right: 0",  
+
+  column(offset = 1,
+         3,
+         actionButton(inputId = vorige,
+                      label ="Vorige",
+                      icon = icon("fa-sharp fa-solid fa-arrow-left",
+                                  verify_fa = F),
+                      style = "height:100px; width: 100%; font-size: 200%;")
+         ),
+  column(3,
+         actionButton(inputId = home,
+                      label = "Home",
+                      icon = icon("home"),
+                      style = "height:100px; width: 100%; font-size: 200%;")
+         ),
+  column(3,
+
+         actionButton(inputId = volgende,
+                      label = div("Volgende",icon("fa-sharp fa-solid fa-arrow-right",
+                                                  verify_fa = FALSE)),
+                      style = "height:100px; width: 100%; font-size: 200%;")
+
+  
+  )
   )
 }
 
 
 #Kubusdata functie.
+#van loops binnen de functie te meten.
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_jaar = FALSE, jaarvariabele = NULL, is_gewogen = FALSE,
                            weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
-                           min_observaties_antwoord = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
-                           geen_crossings){
+                           min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
+                           geen_crossings, minimum_per_cel){
   
-  #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van verwerking ten goede moeten komen.
-  assign("data_totaal",data_totaal, envir = .GlobalEnv)
+  #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van subsetten ten goede moeten komen
   
   jaarvariabele_in_data <- NULL
   jaarvariabele_in_data <- if(heeft_meer_jaar){jaarvariabele}
   
-  
+
   weegfactor_in_data <- NULL
   weegfactor_in_data <- if(is_gewogen){weegfactor}
-  
+
   gebruikte_variabelen <- c(jaarvariabele_in_data,weegfactor_in_data, gebiedsindeling,variabelen,crossings)
   
   #jaren voor analyse komt als 1 str binnen, omzetten naar numeric vector 
@@ -99,36 +114,41 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   
   data_totaal <- data_totaal %>% dplyr::select(all_of(gebruikte_variabelen))
   
+  #assign naar global environment tbv testen
+  data_totaal <<- data_totaal
   
-  #Teller die huidige variabele bijhoudt om % van voortgang te kunnen weergeven
+  #Variabele die increment om voortgang bij te houden
+  #zie rij_per_combinatie_crossings
   huidige_variabele <- 0
   totaal_variabelen <- length(variabelen)
   
   #Variabele die te lange indicatornamen bijhoudt
-  namen_te_lang <- cbind("variabele" = NULL,"naam" = NULL)
-  #Variabele die bijhoudt of er jaren voor analyse zijn opgegeven die niet in de data zitten (voor een specifieke inhoudelijke variabele) 
+  namen_te_lang <<- cbind("variabele" = NULL,"naam" = NULL)
+  #Variabele die bijhoudt of er jaren voor analyse zijn opgegeven waarvoor er geen jaren in de data zitten (voor specifieke variabele) 
   ontbrekende_jaren <- NULL 
-  
-  #Variabele die bijhoudt of er variabelen waren die icm crossings/jaren/gebiedsindelingen een dataset van 0 observaties opleveren
+  #lege variabele: Is er een combinatie waarbij alleen maar missings waren
   missing_variabele  <- c()
   
-  #Variabele die bijhoudt of kubusdata niet opgeslagen kon worden (waarschijnlijk omdat iemand het te overschrijven bestand in gebruik heeft)
+  #Variabele die bijhoudt of kubusdata niet opgeslagen kon worden (omdat iemand het te overschrijven bestand in gebruik heeft)
   var_kubusdata_niet_opgeslagen <- c()
   
-  #Totaal aantal observaties in DF
-  aantal_observaties <- nrow(data_totaal)
+  #Dataframe dat bijhoudt of er data is geanonimiseerd vanwege te kleine aantallen per cel
+  verwijderd_door_te_weinig_antwoorden <- data.frame()
   
-  #Variabele die bijhoudt of obvervaties een missing jaarvariabele hebben
+  #variabele die het totaal aantal observaties bijhoudt
+  aantal_observaties <- nrow(data_totaal)
+
+  #Variabele die bijhoudt of observaties een missing jaarvariabele hebben
   missing_jaarvariabele <- 0
   
   #Opgegeven jaren voor analyse ophalen
   if(heeft_meer_jaar){
-    jaren_voor_analyse <- str_split(jaren_voor_analyse,",") %>% unlist() %>% as.numeric()
-    
-    missing_jaarvariabele <- nrow(data_totaal[is.na(data_totaal[[jaarvariabele]]),])
-    
-    #Dan filteren op jaren die voor analyse zijn opgegeven
-    data_totaal <- data_totaal[which(data_totaal[[jaarvariabele]]%in% jaren_voor_analyse),]
+  jaren_voor_analyse <- str_split(jaren_voor_analyse,",") %>% unlist() %>% as.numeric()
+  
+  missing_jaarvariabele <- nrow(data_totaal[is.na(data_totaal[[jaarvariabele]]),])
+  
+  #Dan filteren op jaren die voor analyse zijn opgegeven
+  data_totaal <- data_totaal[which(data_totaal[[jaarvariabele]]%in% jaren_voor_analyse),]
   }else{
     
     data_totaal[[jaarvariabele]] <- jaren_voor_analyse
@@ -149,10 +169,10 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                  "jaar" = y,
                  "n_missing" = nrow(data_totaal[is.na(data_totaal[[x]]) 
                                                 & data_totaal[[jaarvariabele]] == y,]))
-    }) 
+      }) 
     do.call(rbind,missing_per_jaar)
-    
-  })
+  
+    })
   
   missing_overzicht <- do.call(rbind,missing_overzicht) %>% filter(n_missing > 0)
   
@@ -164,15 +184,20 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     data_totaal$weegfactor <- 1
   }
   
+  #gaat het om een dichotome variabele?
+  is_dichotoom <- all(unname(val_labels(data_totaal[[variabele]])) %in% c(0,1))
+  
+
   #Voor alle variabelen
   lapply(variabelen, function(variabele){
-  
+
+    
     #Maak een kubus dataframe
     kubus_df <- data_totaal %>%
       filter(.[[jaarvariabele]] %in% jaren_voor_analyse,
              !is.na(.[[variabele]]),
              !is.na(.[[gebiedsindeling]]),
-             across(.cols = all_of(crossings),
+             across(.cols = all_of(crossings) ,
                     .fns = ~ !is.na(.x))) %>%
       mutate(n = 1,
              var = factor(.[[variabele]],
@@ -181,14 +206,12 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       group_by(.[[jaarvariabele]],.[[gebiedsindeling]], across(all_of(crossings)), var) %>%
       summarise(n_gewogen = sum(weegfactor),
                 n_ongewogen = sum(n)) %>%
-      ungroup()%>%
-      pivot_wider(names_from = var, values_from = n_gewogen) %>%
-      replace(is.na(.),0)
-    
+      ungroup()
+
     #Als je een variabele opgeeft die (icm crossings / jaren) alleen maar missing kent crasht de boel.
     #Je kan immers geen kruistabel maken met niks.
     #Als dit het geval is willen we de kubusmaakfunctie vroegtijdig afbreken en een melding geven
-    #Als kubus_df geen rijen telt; zijn er geen observaties gevonden die non missing hebben op de combinatie van
+    #Als kubus_df geen rijen telt; zijn er alleen maar missings op de combinatie van
     #jaar: jaren_voor_analyse,gebiedsindeling, crossings, var
     
     if(nrow(kubus_df) == 0){
@@ -200,6 +223,79 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       
     }
     
+
+    #Checken of data moet gewist worden omdat het minimum per cel niet wordt gehaald.
+    #Volgens veel GGD'en mogen percentages van antwoorden die o.b.v. minder dan <5 respondenten zijn niet gepubliceerd worden.
+    #De rede hiervoor is herleidbaarheid. Het is maar de vraag of dit klopt. Deze aanname klopt voor de tabellenboeken
+    #omdat hier ook vaak de absolute aantallen worden gegeven. In Swing worden echter alleen gewogen percentages gepubliceerd
+    #Om zoiets terug te rekenen naar herleidbare antwoorden zou de eindgebruiker heel veel moeten weten:
+    # - Wie er uberhaupt respondenten waren?
+    # - Hoeveel ongewogen respondenten er in totaal een vraag hebben beantwoord
+    # - Wat de relevante weegfactor was
+    # Deze informatie wordt uiteraard niet gepubliceerd. Iemand die deze informatie wel heeft; weet waarschijnlijk toch al te veel.
+
+    #Maar; u vraagt wij draaien.
+    
+    #NB: dit is een zeer strenge manier van controleren. De data van een de hele combinatie jaar/gebiedsindeling
+    #wordt hiermee verwijderd. Er bestaat tot dusver geen mogelijkheid om dit dynamisch door Swing op te laten lossen.
+    #(zoals in Swing wel gedaan kan worden voor minimale groepsgroottes middels de parameter 'Treshold')
+    #Als we die optie zouden hebben kunnen we data laten alleen laten afschermen naar eindgebruikers in het geval dat
+    #een combinatie van crossings/gebiedsindeling is geselecteerd die te lage aantallen per antwoord oplevert.
+    
+    #Nu MOETEN we helaas alles voor dat gebied en die periode weggooien als slechts 1 uitsplitsing een te laag 
+    #aantal per antwoord heeft.
+    
+    if(!is.null(minimum_per_cel)){
+      #De regel minimum per cel wordt als volgt toegepast:
+      
+      #Als een rij een antwoord bevat waarvoor er meer dan 0 en minder dan {minimum_per_cel} ongewogen observaties 
+      #zijn. Wordt alle data voor die variabele op missing gezet voor de hele combinatie van periode & 
+      #gebiedsindeling.
+      
+      #Df maken met periode/antwoorden/gebiedsindeling waarvoor dit geldt
+      
+      te_weinig_antwoorden <- kubus_df %>% filter(n_ongewogen > 0 & n_ongewogen < minimum_per_cel) %>%
+        group_by(`.[[jaarvariabele]]`,`.[[gebiedsindeling]]`)%>%
+        summarise() %>%
+        ungroup()%>%
+        mutate(wissen = 1)
+  
+      }
+    
+    
+    #Nu pivotten naar breed zodat er een kolom is voor ieder antwoord  
+    kubus_df <- kubus_df %>%
+      pivot_wider(names_from = var, values_from = n_gewogen) %>%
+      replace(is.na(.),0)
+    
+    #Werkelijk de data verwijderen van de combinaties gebiedsindeling/periode waarbij een te laag aantal antwoorden is gevonden
+    if(nrow(te_weinig_antwoorden) > 0){
+      
+      #Eerst is er gedacht aan slechts de antwoorden wegstrepen waar een te laag aantal voor geldt.
+      #Data voor andere antwoorden zou dan nog zichtbaar zijn. Er is bij nader inzien voor gekozen de hele variabele weg te strepen. 
+      
+      #Slechts 1 antwoord wegstrepen bereikt niet het doel van 'herleidbaarheid voorkomen'
+      #Als de aantallen voor 1 cel o.b.v. gewogen percentages teruggerekend kunnen worden naar een herleidbaar aantal personen
+      #kan datzelfde ook gedaan worden o.b.v. de andere antwoorden waarvoor genoeg respondenten zijn.
+      
+      kolomindexen_om_te_anonimiseren <- c(which(names(kubus_df)=="n_ongewogen"):(length(kubus_df)-1))
+      
+      kubus_df <- kubus_df %>%
+        left_join(te_weinig_antwoorden, by = c(".[[jaarvariabele]]",".[[gebiedsindeling]]")) 
+      
+      
+      kubus_df[!is.na(kubus_df$wissen),kolomindexen_om_te_anonimiseren] <- missing_voor_privacy
+
+      
+      #DF aanvullen voor een melding van het verwijderen van data vanwege te kleine aantallen per antwoord:
+      te_weinig_antwoorden$variabele <- variabele
+      te_weinig_antwoorden$wissen <- NULL
+      verwijderd_door_te_weinig_antwoorden <<- rbind(verwijderd_door_te_weinig_antwoorden,
+                                                     te_weinig_antwoorden)
+    }
+      
+    
+    
     #Volgorde van kolomtoewijzing is ongeregelmatig tussen configuraties. (configuratie met meerdere jaren
     #doen iets anders dan configuratie met 1 jaar). Mogelijke veroorzaakt door pivot met 1 vs meer jaren.
     #oplossing:  kolomvolgorde forceren
@@ -207,7 +303,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     
     #De volgorde waarop de labels nu zijn ingedeeld in df
     volgorde_labels_in_df <- lapply(volgorde_labels, function(x){
-      
+    
       which(names(kubus_df) == x)
       
     }) %>% unlist()
@@ -221,8 +317,8 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     namen_variabel_kolommen <- glue("{variabele}_{val_labels(data_totaal[[variabele]])}")
     names(kubus_df) <- c(jaarvariabele,gebiedsindeling,crossings,'n_ongewogen',namen_variabel_kolommen)
     
-    #Functie om te kleine aantallen te verwijderen
-    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij){missing_voor_privacy}else{x}}
+    #Functie om te kleine aantallen per groep te verwijderen
+    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij & ongewogen != missing_voor_privacy){missing_voor_convenant}else{x}}
     
     #Na pivot opnieuw groeperen en summarizen, daarna te lage aantallen weghalen
     kubus_df <- kubus_df %>%
@@ -239,18 +335,21 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       ungroup()
     
     
+    
+    
+
     if(geolevel == "ggd"){
       naam_geolevel <- "Regiocode"
     }else{
       naam_geolevel <- "Gemeentecode"
-    }
+      }
     
     names(kubus_df)[1] <- jaarvariabele
     names(kubus_df)[3] <- naam_geolevel
     names(kubus_df)[length(names(kubus_df))] <- glue("{variabele}_ONG")
-    
+
     totaal_rijen <<- nrow(kubus_df)
-    lege_rijen <<- nrow(kubus_df[kubus_df[[length(kubus_df)]] == missing_voor_privacy,])
+    lege_rijen <<- nrow(kubus_df[kubus_df[[length(kubus_df)]] == missing_voor_convenant,])
     
     #We willen een warning geven wanneer er jaren voor analyse zijn opgegeven die niet in de data terugkomen.
     #Welke jaren zijn opgeslagen
@@ -270,32 +369,31 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     
     #Bij dichotome variabelen willen we dat het label van de variabele (vraag) weergeven wordt,
     #Als variabelen niet dichotoom zijn willen we een label voor elk antwoord
-    
-    is_dichotoom <- all(unname(val_labels(data_totaal[[variabele]])) %in% c(0,1))
-    
     if(is_dichotoom){
       variabel_namen <- var_label(data_totaal[[variabele]])
     }
     
+
     n_labels <- length(variabel_labels)
     
     #Excelbestand maken
     workbook <- createWorkbook()
     
     #Geen_crossings; placeholder var wegstrepen
-    #NB doordat crossings & de bijbehorende dummy variabele niet meer bestaan
-    #Worden bij het opmaken van het ExcelWorkbook automatisch de stappen mbt crossings
-    
     if(geen_crossings){
       crossings <- NULL
       
       kubus_df[,4] <- NULL
+     
     }
+      
+    
     
     #Data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data")
     writeData(workbook,"Data",kubus_df)
     
+
     #Definities data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data_def")
     
@@ -310,236 +408,237 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                               unlist(lapply(unname(variabel_labels), function(x){glue("{variabele}_{x}")})),
                               #Ongewogen kolom
                               glue("{variabele}_ONG")),
-                    "type" = c("period","geolevel","geoitem",
-                               #Crossings zijn dimensies
-                               rep("dim", length(crossings)),
-                               #Variabel_levels (en de _ONG kolom) zijn variabelen
-                               rep("var", n_labels + 1)))
-    )
+              "type" = c("period","geolevel","geoitem",
+                         #Crossings zijn dimensies
+                         rep("dim", length(crossings)),
+                         #Variabel_levels (en de _ONG kolom) zijn variabelen
+                         rep("var", n_labels + 1)))
+              )
     
     if(!alleen_data){
-      #Variabel_labels toevoegen aan WB
-      addWorksheet(workbook, sheetName = "Label_var")
-      writeData(workbook,"Label_var",
+    #Variabel_labels toevoegen aan WB
+    addWorksheet(workbook, sheetName = "Label_var")
+    writeData(workbook,"Label_var",
+              
+              cbind(
+                "Onderwerpcode" = c(#Alle variabel-levels als kolommen
+                  unlist(lapply(unname(variabel_labels), function(x){glue("{variabele}_{x}")})),
+                  #Ongewogen kolom
+                  glue("{variabele}_ONG")),
                 
-                cbind(
-                  "Onderwerpcode" = c(#Alle variabel-levels als kolommen
-                    unlist(lapply(unname(variabel_labels), function(x){glue("{variabele}_{x}")})),
-                    #Ongewogen kolom
-                    glue("{variabele}_ONG")),
-                  
-                  "Naam" = c(unlist(lapply(names(variabel_labels), function(x){glue({"Aantal {x}"})})), 
-                             "Totaal aantal ongewogen"),
-                  "Eenheid" = rep("Personen",n_labels,+1))
-      )
+                "Naam" = c(unlist(lapply(names(variabel_labels), function(x){glue({"Aantal {x}"})})), 
+                           "Totaal aantal ongewogen"),
+                "Eenheid" = rep("Personen",n_labels,+1))
+              )
+    
+    
+    #Voor dimensies hebben we een lijst met namen crossings nodig. 
+    #Als variabel_label NULL is wordt de naam "".
+    namen_crossings <-  unlist(lapply(crossings,function(x){
+      #Naam van een crossing is het var_label
+      var_label(data_totaal[[x]])
       
+    }))
+    
+    #Info over Dimensies toevoegen
+    if(!geen_crossings){
+    addWorksheet(workbook, sheetName = "Dimensies")
+    writeData(workbook,"Dimensies",
+              
+              cbind("Dimensiecode" = c(crossings),
+                    "Naam" = namen_crossings))
+    
+    }
+    #Sheets voor de de dimensies;
+    #met namen en volgnummers voor de levels van alle crossingvariabelen
+    lapply(crossings, function(crossing){
       
-      #Voor dimensies hebben we een lijst met namen v crossings nodig. 
-      #Als variabel_label NULL is wordt de naam "".
-      namen_crossings <-  unlist(lapply(crossings,function(x){
-        #Naam van een crossing is het var_label
-        var_label(data_totaal[[x]])
-        
-      }))
+      crossing_labels <- val_labels(data_totaal[[crossing]])
       
-      #Info over Dimensies toevoegen aan WB
-      if(!geen_crossings){
-        addWorksheet(workbook, sheetName = "Dimensies")
-        writeData(workbook,"Dimensies",
-                  
-                  cbind("Dimensiecode" = c(crossings),
-                        "Naam" = namen_crossings))
+      #Te lange crossing labels afknippen & opslaan in lijst met te lang
+      for(label_index in 1:length(crossing_labels)){
         
-      }
-      #Sheets voor de dimensies met namen en volgnummers voor de levels van alle crossingvariabelen
-      lapply(crossings, function(crossing){
+        naam_label <- names(crossing_labels[label_index])
         
-        crossing_labels <- val_labels(data_totaal[[crossing]])
-        
-        #Te lange crossing labels afknippen & opslaan in namen_te_lang
-        for(label_index in 1:length(crossing_labels)){
-          
-          naam_label <- names(crossing_labels[label_index])
-          
-          if(nchar(naam_label) > max_char_labels){
-            #Lijst met te lange namen aanvullen 
-            if(!crossing %in% unique(namen_te_lang[,1])){
-              namen_te_lang <<- rbind(namen_te_lang,
-                                      cbind("variabele" = crossing,
-                                            "naam" = naam_label))
-            }
-            
-            names(crossing_labels)[label_index] <- substr(names(crossing_labels[label_index]),1,max_char_labels)
+        if(nchar(naam_label) > max_char_labels){
+          #Lijst met te lange namen aanvullen 
+          if(!crossing %in% unique(namen_te_lang[,1])){
+            namen_te_lang <<- rbind(namen_te_lang,
+                                   cbind("variabele" = crossing,
+                                         "naam" = naam_label))
           }
           
-        }  
-        #Per crossing / dimensie een sheet toevoegen      
-        addWorksheet(workbook, sheetName = crossing)
-        writeData(workbook, crossing, 
-                  
-                  cbind("Itemcode" =  c(unname(crossing_labels)),
-                        "Naam" = names(crossing_labels),
-                        "Volgnr" = seq(1:length(crossing_labels)))
-                  )
-        })
-      
-      #Tabblad Indicators; 
-      addWorksheet(workbook, sheetName = "Indicators")
-      
-      writeData(workbook, "Indicators",
+          names(crossing_labels)[label_index] <- substr(names(crossing_labels[label_index]),1,max_char_labels)
+          }
+  
+      }  
+      #Per crossing / dimensie een sheet toevoegen        
+      addWorksheet(workbook, sheetName = crossing)
+      writeData(workbook, crossing, 
                 
-                cbind("Indicator code" =
-                        #Alle variabel-levels
-                        c(
-                          glue("{variabele}_{variabel_labels}"),
-                          #ongewogen totaal
-                          glue("{variabele}_ONG"),
-                          #gewogen totaal
-                          glue("{variabele}_GEW"),
-                          #Percentage_per level tenzij het om een dichotome variabele gaat
-                          if(is_dichotoom){
-                            glue("{variabele}_perc")
-                          }else{
-                            glue("{variabele}_{variabel_labels}_perc")}
-                        ),
-                      
-                      "Name" = 
-                        #Alle variabel-levels
-                        c(unlist(lapply(names(variabel_labels), function(x){glue({"Aantal {x}"})})),
-                          "Totaal aantal ongewogen",
-                          "Totaal aantal gewogen",
+                cbind("Itemcode" =  c(unname(crossing_labels)),
+                      "Naam" = names(crossing_labels),
+                      "Volgnr" = seq(1:length(crossing_labels))
+                )
+                )
+      
+    })
+    
+    #Tabblad Indicators; 
+    addWorksheet(workbook, sheetName = "Indicators")
+    
+    writeData(workbook, "Indicators",
+  
+              cbind("Indicator code" = 
+                      #Alle variabel-levels
+                      c(
+                        glue("{variabele}_{variabel_labels}"),
+                        #ongewogen totaal
+                        glue("{variabele}_ONG"),
+                        #gewogen totaal
+                        glue("{variabele}_GEW"),
+                        #Percentage_per level tenzij het om een dichotome variabele gaat
+                        if(is_dichotoom){
+                          glue("{variabele}_perc")
+                        }else{
+                          glue("{variabele}_{variabel_labels}_perc")}
+                      ),
+                    
+                    
+                    "Name" = 
+                      #Alle variabel-levels
+                      c(unlist(lapply(names(variabel_labels), function(x){glue({"Aantal {x}"})})),
+                        "Totaal aantal ongewogen",
+                        "Totaal aantal gewogen",
+                        
+                        #1 percentage rij als het om dichotoom gaat
+                        if(is_dichotoom){
                           
-                          #1 percentage rij als het om dichotoom gaat
-                          if(is_dichotoom){
+                          #Namen die langer zijn dan 99-tekens worden niet geaccepteerd door Swing
+                          #Substr om 1e 99 tekens mee te nemen & zorgen dat afgeknipte variabelnamen worden bijgehoudeh
+                          if(nchar(variabel_namen) > max_char_labels){
+                            namen_te_lang <<- rbind(namen_te_lang, 
+                                                    cbind("variabele" = variabele,
+                                                          "naam" = variabel_namen))
+                          }
+                           
+                          substr(variabel_namen,1,max_char_labels)
+                          
+                          
+                          }else{
+                          #Percentage rij voor Alle niveaus  als het om niet-dichotoom gaat
+                          unlist(lapply(names(variabel_labels), function(x){
                             
-                            #Namen die langer zijn dan 99-tekens worden niet geaccepteerd door Swing
-                            #Substr om 1e 99 tekens mee te nemen & zorgen dat afgeknipte variabelnamen worden bijgehoudeh
-                            if(nchar(variabel_namen) > max_char_labels){
-                              namen_te_lang <<- rbind(namen_te_lang, 
-                                                      cbind("variabele" = variabele,
-                                                            "naam" = variabel_namen))
+                            #Indicator opbouwen uit; Var-label + val_label
+                            var_label <- var_label(data_totaal[[variabele]])
+                            
+                            naam_indicator <- glue("{var_label}, {x}") 
+                            
+                            #Als de automatische naam indicator te lang is voor Swing: Opknippen & vastleggen
+                            if(nchar(naam_indicator) > max_char_labels){
+                              
+                              #Indicator opslaan voor melding na uitvoeren wizard
+                              namen_te_lang <<- rbind(namen_te_lang,
+                                                       cbind("variabele" = variabele,
+                                                             "naam" = naam_indicator))
+                              #Label inkorten door beide onderdelen in te korten
+                              var_label_kort <- substr(var_label,1,(max_char_labels/2)-2)
+                              val_label_kort <- substr(x,1,max_char_labels/2)
+                              
+                              naam_indicator <- glue("{var_label_kort}, {val_label_kort}")
                             }
                             
-                            substr(variabel_namen,1,max_char_labels)
                             
+                            naam_indicator
                             
-                          }else{
-                            #Percentage rij voor Alle niveaus  als het om niet-dichotoom gaat
-                            unlist(lapply(names(variabel_labels), function(x){
-                              
-                              #Indicator opbouwen uit; Var-label + val_label
-                              var_label <- var_label(data_totaal[[variabele]])
-                              
-                              naam_indicator <- glue("{var_label}, {x}")
-                              
-                              #Als de automatische naam indicator te lang is voor Swing: Opknippen & vastleggen
-                              if(nchar(naam_indicator) > max_char_labels){
-                                
-                                #Indicator opslaan voor melding na uitvoeren wizard
-                                namen_te_lang <<- rbind(namen_te_lang,
-                                                        cbind("variabele" = variabele,
-                                                              "naam" = naam_indicator))
-                                #Label inkorten door beide onderdelen in te korten
-                                var_label_kort <- substr(var_label,1,(max_char_labels/2)-2)
-                                val_label_kort <- substr(x,1,max_char_labels/2)
-                                
-                                naam_indicator <- glue("{var_label_kort}, {val_label_kort}")
-                              }
-                              
-                              naam_indicator
-                              
                             }))
-                          }),
-                      #Percentage of personen
-                      #aantal rijen voor personen = levels variabele + 2(gewogen/ongewogen)
-                      "Unit" = c(rep("personen",n_labels+2),
-                                 #aantal rijen voor percentages = levels variabele
-                                 if(is_dichotoom){
-                                   "percentage"
-                                 }else{
-                                   rep("percentage",n_labels)}),
-                      
-                      "Aggregation indicator" = 
-                        #Aggregation indicator is alleen voor percentages relevant; het gewogen totaal
-                        c(rep("",n_labels+2),
-                          
-                          if(is_dichotoom){
-                            glue("{variabele}_GEW")
-                          }else{
-                            #aantal rijen voor percentages = levels variabele
-                            rep(glue("{variabele}_GEW"),n_labels)
-                          }),
-                      
-                      
-                      "Formula" = c(
-                        #Er zijn twee soorten formules in het indicator tabblad; 
-                        #de berekening van de gewogen totalen obv de gewogen aantallen per level.
-                        #de berekening van het percentage per level obv de gewogen aantallen
-                        
-                        #Lege rijen voor de rij van gewogen totaal = var_levels + 1
-                        rep("",n_labels+1),
-                        
-                        #Totaal gewogen = Alle variabel lvls bij elkaar opgeteld
-                        str_c(glue("{variabele}_{variabel_labels}"), collapse = "+"),
-                        
-                        #ALs variabele dichtoom is hebben we maar 1 percentage
-                        if(is_dichotoom){
-                          glue("({variabele}_1/({str_c(glue('{variabele}_{variabel_labels}'), collapse = '+')}))*100 ")
-                        }else{
-                          #Vector met alle indicator codes
-                          indicator_codes <- unlist(lapply(unname(variabel_labels),function(x){glue('{variabele}_{x}')}))
-                          #Nu percentages voor alle indicator codes -> indicator code / alle_levels * 100
-                          
-                          #Formule om in Swing een percentage uit te rekenen.
-                          #Glue voor iedere indicator code een string met de structuur: 
-                          #({huidige_indicator})/({indicator_1 + indicator_2 + ...) * 100}
-                          
-                          glue("({indicator_codes}/({str_c(glue('{variabele}_{variabel_labels}'), collapse = '+')}))*100 ")
                         }),
+                    #Percentage of personen
+                    #aantal rijen voor personen = levels variabele + 2(gewogen/ongewogen)
+                    "Unit" = c(rep("personen",n_labels+2),
+                               #aantal rijen voor percentages = levels variabele
+                               if(is_dichotoom){
+                                 "percentage"
+                               }else{
+                                 rep("percentage",n_labels)}),
+                    
+                    "Aggregation indicator" = 
+                      #Aggregation indicator is alleen voor percentages relevant; het gewogen totaal
+                      c(rep("",n_labels+2),
+                        
+                        if(is_dichotoom){
+                          glue("{variabele}_GEW")
+                        }else{
+                          #aantal rijen voor percentages = levels variabele
+                          rep(glue("{variabele}_GEW"),n_labels)
+                        }),
+                    
+                    
+                    "Formula" = c(
+                      #Er zijn twee soorten formules in het indicator tabblad; 
+                      #de berekening van de gewogen totalen obv de gewogen aantallen per level.
+                      #de berekening van het percentage per level obv de gewogen aantallen
                       
-                      #Zelfde logica als "Unit"
-                      "Data type" = c(rep("Numeric",n_labels+2),
-                                      #aantal rijen voor percentages = levels variabele
-                                      if(is_dichotoom){
-                                        "Percentage"
-                                      }else{
-                                        rep("Percentage",n_labels)}),
-                      #Alleen de percentages moeten visibile zijn
-                      "Visible" = c(rep(0,n_labels+2),
+                      #Lege rijen voor de rij van gewogen totaal = var_levels + 1
+                      rep("",n_labels+1),
+                      
+                      #Totaal gewogen = Alle variabel lvls bij elkaar opgeteld
+                      str_c(glue("{variabele}_{variabel_labels}"), collapse = "+"),
+                      
+                      #ALs variabele dichtoom is hebben we maar 1 percentage
+                      if(is_dichotoom){
+                        glue("({variabele}_1/({str_c(glue('{variabele}_{variabel_labels}'), collapse = '+')}))*100 ")
+                      }else{
+                        #Vector met alle indicator codes
+                        indicator_codes <- unlist(lapply(unname(variabel_labels),function(x){glue('{variabele}_{x}')}))
+                        #Nu percentages voor alle indicator codes -> indicator code / alle_levels * 100
+                        
+                        #Formule om in Swing een percentage uit te rekenen.
+                        #Glue voor iedere indicator code een string met de structuur: 
+                        #({huidige_indicator})/({indicator_1 + indicator_2 + ...) * 100}
+                        
+                        glue("({indicator_codes}/({str_c(glue('{variabele}_{variabel_labels}'), collapse = '+')}))*100 ")
+                      }),
+                    #Zelfde logica als "Unit"
+                    "Data type" = c(rep("Numeric",n_labels+2),
                                     #aantal rijen voor percentages = levels variabele
                                     if(is_dichotoom){
-                                      1
+                                      "Percentage"
                                     }else{
-                                      rep(1,n_labels)}),
-                      
-                      #Treshold opgeven voor percentages. Als een selectie van
-                      #dimensies/crossings tot een groepsindeling leidt met minder observaties treshold 
-                      #Wordt dit afgeschermd in de mozaieken / viewer van Swing
-                      "Threshold value" = c(rep("",n_labels+2),
-                                            #aantal rijen voor percentages = levels variabele
-                                            if(is_dichotoom){
-                                              min_observaties_antwoord
-                                            }else{
-                                              rep(min_observaties_antwoord,n_labels)}),
-                      
-                      #Cube is overal 1
-                      "Cube" = c(rep(1,n_labels+2),
+                                      rep("Percentage",n_labels)}),
+                    #Alleen de percentages moeten visibile zijn
+                    "Visible" = c(rep(0,n_labels+2),
+                                  #aantal rijen voor percentages = levels variabele
+                                  if(is_dichotoom){
+                                    1
+                                  }else{
+                                    rep(1,n_labels)}),
+                    #Treshold opgeven voor percentages. Als een selectie van
+                    #dimensies/crossings tot een groepsindeling leidt met minder observaties treshold 
+                    #Wordt dit afgeschermd in de mozaieken / viewer van Swing
+                    "Threshold value" = c(rep("",n_labels+2),
+                                          #aantal rijen voor percentages = levels variabele
+                                          if(is_dichotoom){
+                                            min_observaties
+                                          }else{
+                                            rep(min_observaties,n_labels)}),
+                    #Cube is overal 1
+                    "Cube" = c(rep(1,n_labels+2),
+                               if(is_dichotoom){
+                                 1
+                               }else{
+                                 rep(1,n_labels)}),
+                    #Source is overal hetzelfde
+                    "Source" = c(rep(bron,n_labels+2),
                                  if(is_dichotoom){
-                                   1
+                                   bron
                                  }else{
-                                   rep(1,n_labels)}),
-                      
-                      #Source is overal hetzelfde
-                      "Source" = c(rep(bron,n_labels+2),
-                                   if(is_dichotoom){
-                                     bron
-                                   }else{
-                                     rep(bron,n_labels)})
-                      
-                ))
+                                   rep(bron,n_labels)})
+                    
+              ))
     }
-    #SaveWorkbook in een trycatch om een foutbericht aan de popup aan t eind
-    #te kunnen geven bij mislukken van opslaan
+    #SaveWorkbook in een trycatch zodat applicatie niet crasht bij mislukken van opslaan.
+    #variabelnaam opslaan voor een foutbericht na het uitvoeren van een configuratie
     tryCatch({
       
       saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}.xlsx"), overwrite = TRUE)
@@ -555,8 +654,8 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       
       var_kubusdata_niet_opgeslagen <<- c(var_kubusdata_niet_opgeslagen, glue("{variabele}"))
     })
-    
-    
+
+
     #Voortgang bijhouden voor progressbar
     huidige_variabele <<- huidige_variabele + 1
     
@@ -565,7 +664,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     }
     
   })
-  
+
   #Modal sluiten & nieuwe modal sturen met alle waarschuwingen/foutmeldingen over uitvoeren
   #van configuratie
   removeModal()
@@ -655,6 +754,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   
   melding_lege_groepen <- ""
   if(lege_rijen > 0){
+    print(1)
     melding_lege_groepen <- glue(
       "<strong style= 'color:red'>LET OP!</strong>
       <p>Voor <strong>{lege_rijen}</strong> uit de <strong>{totaal_rijen}</strong> rijen zijn er te weinig of geen observaties gevonden.
@@ -677,7 +777,21 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       <p>Maak kortere labels om dit te voorkomen</p>")
   }
   
+  melding_te_weinig_antwoorden <- ""
   
+  melding_te_weinig_antwoorden <- if(nrow(verwijderd_door_te_weinig_antwoorden) > 0 ){
+    
+    names(verwijderd_door_te_weinig_antwoorden) <- c("periode","gebiedsindeling","variabele")
+    glue("
+          <strong style= 'color:red'>LET OP!</strong>
+          <p> Er zijn groepsuitsplitsingen waarvoor geldt dat een antwoord meer dan 0 en minder dan het ingestelde minimum
+          van {minimum_per_cel} respondenten telde. 
+          
+          <strong> Alle data </strong> die bij de onderstaande combinaties van variabele, periode en gebiedsindeling hoort is 
+          verwijderd & als missing opgeslagen.  
+          
+         {kable(verwijderd_door_te_weinig_antwoorden) %>% kable_styling('striped', full_width = F)}")
+  }
   
   showModal(
     modalDialog(
@@ -690,12 +804,13 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                {melding_niet_opgeslagen}
                {melding_ontbrekende_jaren}
                {melding_lege_groepen}
+               {melding_te_weinig_antwoorden}
                {melding_lange_namen}
                           
                <strong> Kubusbestanden zijn opgeslagen voor de volgende variabelen:</strong>
                <ul><li>{str_c(variabelen[!variabelen %in% c(missing_variabele,var_kubusdata_niet_opgeslagen)],collapse = '</li><li>')}</li></ul>
                <p>Kubusdata is te vinden in de map <strong>{gekozen_map}</strong> </p>"))))
-  
-  
+
+
   
 }

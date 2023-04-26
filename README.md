@@ -75,27 +75,27 @@ Wizard gebruiken
 2. Open global.R in Rstudio
 
 3. Opstarten
-  a. Eerste keer: Klik op het drop-down pijltje naast Run App en selecteer “Run external”
-  b. Klik op het op het groene pijltje
-  4. Er wordt nu een venster geopend in je standaardbrowser. Hier kan je kiezen voor Maak een 
+  - Eerste keer: Klik op het drop-down pijltje naast Run App en selecteer “Run external”
+  - Klik op het op het groene pijltje
+  - Er wordt nu een venster geopend in je standaardbrowser. Hier kan je kiezen voor Maak een 
      configuratie en lees een bestaande configuratie
 
 5. Een configuratie maken
-  a. Klik op Maak een configuratie
-  b. Klik bij Lees een SPSS .sav bestand in op Browse en selecteer een SPSS .sav. Het laden van de dataset kan enkele seconden duren.
-  c. Doorloop vervolgens alle stappen. Lees instructies en maak selecties. 
-  d. Wanneer alles is ingevoerd klik je op Configuratie opslaan. 
+  - Klik op Maak een configuratie
+  - Klik bij Lees een SPSS .sav bestand in op Browse en selecteer een SPSS .sav. Het laden van de dataset kan enkele seconden duren.
+  - Doorloop vervolgens alle stappen. Lees instructies en maak selecties. 
+  - Wanneer alles is ingevoerd klik je op Configuratie opslaan. 
 
 6. Een configuratie lezen
-  a. Klik op Lees een bestaande configuratie
-  b. Klik bij Selecteer een configuratiebestand op Browse en selecteer een .xlsx bestand. Het laden van de configuratie & bijbehorende dataset kan enkele seconden duren.
-    i. (Optie) Kies Configuratie bewerken om naar 'Maak een configuratie' te gaan en de huidige instellingen te wijzigen.
+  - Klik op Lees een bestaande configuratie
+  - Klik bij Selecteer een configuratiebestand op Browse en selecteer een .xlsx bestand. Het laden van de configuratie & bijbehorende dataset kan enkele seconden duren.
+    -- (Optie) Kies Configuratie bewerken om naar 'Maak een configuratie' te gaan en de huidige instellingen te wijzigen.
 
 7. Een configuratie uitvoeren (na stap 5 of 6)
-  a. Klik op Selecteer een map voor kubusdata en kies een map waar de output opgeslagen 
+  - Klik op Selecteer een map voor kubusdata en kies een map waar de output opgeslagen 
   moet worden.
-  b. Kies Maak een Swing kubusbestand om de configuratie uit te voeren
-  c. Wanneer de configuratie is uitgevoerd verschijnt een popup met meldingen over
+  - Kies Maak een Swing kubusbestand om de configuratie uit te voeren
+  - Wanneer de configuratie is uitgevoerd verschijnt een popup met meldingen over
   het verwerken van de configuratie. Lees dit goed.
-  d. De kubusdata is nu te vinden in de gekozen map (in te stellen bovenin global.R) 
+  - De kubusdata is nu te vinden in de gekozen map (in te stellen bovenin global.R) 
   voor Swing als .xlsx bestanden voor elke variabele. Controleer de resultaten.

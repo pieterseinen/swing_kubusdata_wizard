@@ -6,7 +6,7 @@ ui <- fluidPage(
     id = "swing_wizard",
     type = "hidden",
     
-    header = HTML("<h1 style ='text-align:center; height: 50px;'> <strong> Monitordata uit SPSS omzetten naar Kubusbestanden voor Swing </strong></h1>"),
+    header = HTML("<h1> <strong> Monitordata uit SPSS omzetten naar Kubusbestanden voor Swing </strong></h1>"),
     
     tabPanel("home",
              column(width = 6,
@@ -20,9 +20,11 @@ ui <- fluidPage(
                       actionButton("naar_lees", icon = icon("book"),
                                    "Voer een configuratie uit", 
                                    style = "height:400px; width: 100%; font-size: 200%"))
-             )
-    ),
+                    )
+             ),
     
+    #Instellen van de configuratie over meerdere verspreid
+    #Dit verhoogt de kans dat er goed gelezen wordt voordat een configuratie wordt opgeslagen
     tabPanel("kies_data",
              fluidRow(
                column(6,
@@ -42,9 +44,9 @@ ui <- fluidPage(
                            
                            
                            </ul></p>")
-                          )
-                      )
-               ),
+                             )
+                        )
+                      ),
                
                column(6,
                       box(width = 12,
@@ -53,21 +55,21 @@ ui <- fluidPage(
                                                        icon = icon("folder"),
                                                        style = "height:200px; width: 100%; font-size: 200%;"),
                           uiOutput("spss_data_preview")%>% shinycssloaders::withSpinner())
-               )
-             ),
+                      )
+               ),
              
              fluidRow(
                
                navigatieknoppen("naar_home1","naar_home2","naar_naam_config1"))
-    ),
+             ),
     
     tabPanel("naam_config",
-             
+            
              column(6,                
                     box(width = 12,
-                        HTML(
-                          glue::glue(
-                            "<h1><strong> 2. Kies de bestandsnaam van de configuratie en de naam van de bron </strong></h1>
+                      HTML(
+                      glue::glue(
+                      "<h1><strong> 2. Kies de bestandsnaam van de configuratie en de naam van de bron </strong></h1>
                       
                       <p><ul><li> Het <strong>configuratiebestand</strong> wordt als een.xlsx bestand opgeslagen in <strong>{basismap_configuraties}</strong>.
                       </li>
@@ -80,8 +82,8 @@ ui <- fluidPage(
                            
                       <li> Om verder te kunnen moeten er een bestandsnaam EN bronnaam gekozen zijn. 
                       </li></ul></p>"))
-                    )
-             ),
+                      )
+                    ),
              
              column(6,
                     
@@ -90,19 +92,19 @@ ui <- fluidPage(
                         shinyjs::hidden(uiOutput("input_configuratie_overschrijven")),
                         uiOutput("input_bron"),
                         uiOutput("bron_toevoegen")
-                    )
-             ),
+                        )
+                    ),
              
              fluidRow(
                navigatieknoppen("naar_kies_data2","naar_home3","naar_variabelen_en_crossings1"))
-    ),
+             ),
     
-    tabPanel("variabelen_en_crossings",
-             
-             fluidRow(
-               column(6,
-                      box(width = 12,
-                          HTML(glue::glue("<h1><strong> 3. Selecteer crossings en inhoudelijke variabelen </strong></h1>
+  tabPanel("variabelen_en_crossings",
+           
+           fluidRow(
+             column(6,
+                    box(width = 12,
+                        HTML(glue::glue("<h1><strong> 3. Selecteer crossings en inhoudelijke variabelen </strong></h1>
                         <p><ul><li> Selecteer crossings en inhoudelijke variabelen door er op te klikken. 
                            Variabelen aan de rechterkant van de invoer zijn geselecteerd. </strong>. 
                            </li>
@@ -125,36 +127,36 @@ ui <- fluidPage(
                            </li>
                            
                            </ul></p>")
-                          )
                       )
-               ),
-               
-               column(6,
-                      box(width = 12,
-                          fluidRow(
-                            column(12, offset = 5,
-                                   div(checkboxInput("geen_crossings","Geen crossings"),style = "height: 30px; align:center;")),
-                            uiOutput("input_crossings")),
-                          fluidRow(
-                            uiOutput("input_variabelen"),
-                            uiOutput("input_geplakte_variabelen")
-                          )
-                      )
-               )
+                    )
              ),
-             fluidRow(
-               navigatieknoppen("naar_naam_config2","naar_home4","naar_periode1")
-             )
-    ),
-    
-    
-    
-    tabPanel("periode",
              
-             fluidRow(
-               column(6,
-                      box(width = 12,
-                          HTML(glue::glue("<h1><strong> 4. Stel periode in </strong></h1>
+             column(6,
+                    box(width = 12,
+                        fluidRow(
+                          column(12, offset = 5,
+                          div(checkboxInput("geen_crossings","Geen crossings"),style = "height: 30px; align:center;")),
+                          uiOutput("input_crossings")),
+                        fluidRow(
+                          uiOutput("input_variabelen"),
+                          uiOutput("input_geplakte_variabelen")
+                          )
+                        )
+                    )
+             ),
+           fluidRow(
+             navigatieknoppen("naar_naam_config2","naar_home4","naar_periode1")
+             )
+           ),
+  
+  
+  
+  tabPanel("periode",
+           
+           fluidRow(
+             column(6,
+                    box(width = 12,
+                      HTML(glue::glue("<h1><strong> 4. Stel periode in </strong></h1>
                         
                         
                            <p> Geef op deze pagina aan in over welke periode de kubusdata gaat.
@@ -177,31 +179,31 @@ ui <- fluidPage(
                            <strong>Kies welke jaren meegnomen moeten worden</strong> </li> 
                            </ul>
                            </p>")))
-               ),
-               
-               column(6,       
-                      box(width = 12,
-                          fluidRow(
-                            uiOutput("input_is_meer_jaar")),
-                          fluidRow(
-                            uiOutput("input_jaarvariabele"),
-                            uiOutput("input_jaren_analyse"),
-                            shinyjs::hidden(uiOutput("input_type_periode")),
-                            shinyjs::hidden(uiOutput("input_naam_periode")))
-                      ))
+                    ),
+             
+             column(6,       
+                    box(width = 12,
+                        fluidRow(
+                          uiOutput("input_is_meer_jaar")),
+                        fluidRow(
+                          uiOutput("input_jaarvariabele"),
+                          uiOutput("input_jaren_analyse"),
+                          shinyjs::hidden(uiOutput("input_type_periode")),
+                          shinyjs::hidden(uiOutput("input_naam_periode")))
+                        ))
              ),
-             
-             fluidRow(
-               navigatieknoppen("naar_variabelen_en_crossings2","naar_home5","naar_gebiedsindeling1"))
-    ),
-    
-    tabPanel("gebiedsindeling",
-             
-             fluidRow(
-               column(6,
-                      box(width = 12,
-                          HTML(glue::glue(
-                            "<h1><strong> 5. Kies de gebiedsindeling </strong></h1>
+           
+           fluidRow(
+             navigatieknoppen("naar_variabelen_en_crossings2","naar_home5","naar_gebiedsindeling1"))
+           ),
+  
+  tabPanel("gebiedsindeling",
+           
+           fluidRow(
+             column(6,
+                    box(width = 12,
+                        HTML(glue::glue(
+                          "<h1><strong> 5. Kies de gebiedsindeling </strong></h1>
                         
                         
                            <p> Stel op deze pagina in of de data op regioniveau of per gemeente geanalyseerd moet worden.
@@ -218,24 +220,24 @@ ui <- fluidPage(
         
                            </p>"
                           )))
-               ),
-               
-               column(6,
-                      box(width = 12,
-                          fluidRow(box(uiOutput("input_gebiedsniveau"))),
-                          fluidRow(uiOutput("input_gebiedsindeling"))))
+                    ),
+             
+             column(6,
+                    box(width = 12,
+                        fluidRow(box(uiOutput("input_gebiedsniveau"))),
+                        fluidRow(uiOutput("input_gebiedsindeling"))))
              ),
-             
-             fluidRow(
-               navigatieknoppen("naar_periode2","naar_home6","naar_gewogen")
-             )),
-    
-    tabPanel("gewogen",
-             
-             fluidRow(
-               column(6,
-                      box(width = 12,
-                          HTML("<h1><strong> 5. Gewogen design & minimum observaties per groep instellen </strong></h1>
+        
+           fluidRow(
+             navigatieknoppen("naar_periode2","naar_home6","naar_gewogen")
+           )),
+  
+  tabPanel("gewogen",
+           
+           fluidRow(
+             column(6,
+                    box(width = 12,
+                        HTML("<h1><strong> 5. Gewogen design & minimum observaties per groep instellen </strong></h1>
                              <p><ul><li> Vink <strong> Gewogen design?</strong> aan als de kubusdata gewogen  uitgerekend moeten worden
                              </li>
                              <li> Selecteer vervolgens bij <strong>Weegfactor</strong> de variabele die de weegfactor vastlegt
@@ -244,51 +246,59 @@ ui <- fluidPage(
                              Swing zal de data van groepen die een lager aantal <strong>ongewogen</strong> observaties hebben
                              afschermen.
                              </li>
+                             <li> Kies eventueel een minimum aantal observaties per antwoord. Laat dit veld leeg
+                             als je hier geen gebruik van wilt maken. <strong> LET OP!</strong> deze optie verwijderd 
+                             per variabele <strong>alle data</strong> voor een periode/gebiedsindeling als er minstens 1 
+                             groepsuitsplitsing is waarbij er voor 1 antwoord meer minder respondenten 0 en minder dan
+                             het ingestelde minimum. 
+                             
+                             
                              <li> Klik als je klaar bent rechtsonder op <strong>Configuratie opslaan</strong>
                              </li></ul></p>"))
-               ),
-               column(6,
-                      box(width = 12,
-                          fluidRow(
-                            uiOutput("input_is_gewogen")
+                    ),
+             column(6,
+                    box(width = 12,
+                        fluidRow(
+                          uiOutput("input_is_gewogen")
                           ),
-                          fluidRow(
-                            uiOutput("input_weegfactor"),
-                            uiOutput("input_minimum_observaties")
+                        fluidRow(
+                          uiOutput("input_weegfactor"),
+                          uiOutput("input_minimum_observaties"),
+                          uiOutput("input_minimum_observaties_per_antwoord")
                           )
-                      )
-               )
+                        )
+                    )
              ),
+           
+           fluidRow(
+             div(style = "position: absolute; bottom: 0; left: 0; right: 0",  
+                 
+                 column(offset = 1,
+                        3,
+                        actionButton(inputId = "naar_gebiedsindeling2",
+                                     label ="Vorige",
+                                     icon = icon("fa-sharp fa-solid fa-arrow-left",
+                                                 verify_fa = F),
+                                     style = "height:100px; width: 100%; font-size: 200%;")
+                 ),
+                 column(3,
+                        actionButton(inputId = "naar_home7",
+                                     label = "Home",
+                                     icon = icon("home"),
+                                     style = "height:100px; width: 100%; font-size: 200%;")
+                 ),
+                 
+                 column(3,
+                        uiOutput("input_maak_configuratie")
+                        
+                        
+                 )
+                 )
              
-             fluidRow(
-               div(style = "position: absolute; bottom: 0; left: 0; right: 0",  
-                   
-                   column(offset = 1,
-                          3,
-                          actionButton(inputId = "naar_gebiedsindeling2",
-                                       label ="Vorige",
-                                       icon = icon("fa-sharp fa-solid fa-arrow-left",
-                                                   verify_fa = F),
-                                       style = "height:100px; width: 100%; font-size: 200%;")
-                   ),
-                   column(3,
-                          actionButton(inputId = "naar_home7",
-                                       label = "Home",
-                                       icon = icon("home"),
-                                       style = "height:100px; width: 100%; font-size: 200%;")
-                   ),
-                   
-                   column(3,
-                          uiOutput("input_maak_configuratie")
-                          
-                          
-                   )
-               )
-               
-             )
-    ),
-    
-    tabPanel("lees_configuratie",
+           )
+           ),
+  
+  tabPanel("lees_configuratie",
              
              fluidRow(
                
@@ -312,7 +322,7 @@ ui <- fluidPage(
                                </li>
                                </ul>
                                "))
-               ),
+                      ),
                
                column(width = 6,
                       box(width = 12,
@@ -323,29 +333,35 @@ ui <- fluidPage(
                           uiOutput("geen_map_gekozen"),
                           shinyDirButton("folder","Selecteer een map voor kubusdata","Kies een bestemming voor kubusdata", F),
                           checkboxInput("alleen_data","Alleen 'Data' sheets maken")
+                          )
                       )
-               )
              ),
-             
-             
+          
+
              #Validatie van configuratie
              fluidRow(
                br(),
                column(4,uiOutput("overzicht_crossings") %>% shinycssloaders::withSpinner()),
                column(4,uiOutput("overzicht_variabelen")%>% shinycssloaders::withSpinner()),
                column(4,uiOutput("overzicht_gebiedsindeling")%>% shinycssloaders::withSpinner())
-               
-             ),
+
+               ),
              
              fluidRow(
                div(style = "position: absolute; bottom: 0; left: 0; right: 0",  
-                   column(width = 5, offset = 1, 
-                          #Knoppen Maak kubusdata & bewerk kubusdata
-                          uiOutput("knop_bewerk_configuratie")),
-                   column(width = 5, 
-                          uiOutput("knop_maak_kubusdata")
-                   ))
+               column(width = 5, offset = 1, 
+                             #Knoppen Maak kubusdata & bewerk kubusdata
+                             uiOutput("knop_bewerk_configuratie")
+                             ),
+               column(width = 5, 
+                      uiOutput("knop_maak_kubusdata")
+                      )
                )
-    )
-  )
+               
+               )
+             )
+    
+ 
+  
+)
 )
