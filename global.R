@@ -15,8 +15,8 @@ minimum_obs_per_rij <- 2
 #Waarde -99997 past bij Swings default Special value voor 'empty'
 missing_voor_convenant <- -99997
 
-#Privacymensen van een aantal GGD'en zijn van mening dat data van antwoorden met minder dan
-#5 respondenten niet gepubliceerd mogen worden vanwege herleidbaarheid. Gebruiker kan zelf een minimum instellen.
+#Privacymensen van een aantal GGD'en zijn van mening dat percentages van antwoorden met minder dan
+#5 ongewogen respondenten niet gepubliceerd mogen worden vanwege herleidbaarheid. Gebruiker kan zelf een minimum instellen.
 #Waarde -99996 past bij Swings default special value voor 'hidden'
 missing_voor_privacy <- -99996
 
@@ -93,15 +93,15 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 
 #Kubusdata functie.
 #van loops binnen de functie te meten.
-maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_jaar = FALSE, jaarvariabele = NULL, is_gewogen = FALSE,
-                           weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
+maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_perioden = FALSE, jaarvariabele = NULL, type_periode = NULL,
+                           is_gewogen = FALSE,weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
                            min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
                            geen_crossings, minimum_per_cel){
   
   #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van subsetten ten goede moeten komen
-  
+
   jaarvariabele_in_data <- NULL
-  jaarvariabele_in_data <- if(heeft_meer_jaar){jaarvariabele}
+  jaarvariabele_in_data <- if(heeft_meer_perioden){jaarvariabele}
   
 
   weegfactor_in_data <- NULL
@@ -142,7 +142,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   missing_jaarvariabele <- 0
   
   #Opgegeven jaren voor analyse ophalen
-  if(heeft_meer_jaar){
+  if(heeft_meer_perioden){
   jaren_voor_analyse <- str_split(jaren_voor_analyse,",") %>% unlist() %>% as.numeric()
   
   missing_jaarvariabele <- nrow(data_totaal[is.na(data_totaal[[jaarvariabele]]),])
@@ -336,22 +336,34 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     
     
     
+    geolevel_namen <- data.frame("geolevel" = c("nederland",
+                                                "ggd",
+                                                "gemeente",
+                                                "buurt21",
+                                                "wijk21",
+                                                "postcode"),
+                                 "Code" = c("Landcode",
+                                            "Regiocode",
+                                            "Gemeentecode",
+                                            "Buurtcode",
+                                            "Wijkcode",
+                                            "Postcode"))
     
-
-    if(geolevel == "ggd"){
-      naam_geolevel <- "Regiocode"
-    }else{
-      naam_geolevel <- "Gemeentecode"
-      }
+    naam_geolevel = geolevel_namen$Code[geolevel_namen$geolevel == geolevel] 
     
-    names(kubus_df)[1] <- jaarvariabele
+    #Periodevariabele aanpassen naar ingesteld type.
+    #Omgaan met oude configuraties die die optie niet hadden    
+    if(is.null(type_periode)){
+      type_periode <- "Jaar"  
+    }
+    names(kubus_df)[1] <- type_periode
     names(kubus_df)[3] <- naam_geolevel
     names(kubus_df)[length(names(kubus_df))] <- glue("{variabele}_ONG")
 
     totaal_rijen <<- nrow(kubus_df)
     lege_rijen <<- nrow(kubus_df[kubus_df[[length(kubus_df)]] == missing_voor_convenant,])
-    
-    #We willen een warning geven wanneer er jaren voor analyse zijn opgegeven die niet in de data terugkomen.
+
+    #We willen een melding geven wanneer er jaren voor analyse zijn opgegeven die niet in de data terugkomen.
     #Welke jaren zijn opgeslagen
     jaren_in_kubusdata <- unique(kubus_df[[1]])
     
@@ -359,7 +371,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     jaren_niet_in_kubusdata <- jaren_voor_analyse[!jaren_voor_analyse %in% jaren_in_kubusdata] %>% str_c(collapse = ",")
     
     #Als input = is_meer_jaar en jaren_voor_analyse bevat jaren die niet in kubus df zitten: vul melding aan
-    if(heeft_meer_jaar & nchar(jaren_niet_in_kubusdata) > 0 ){
+    if(heeft_meer_perioden & nchar(jaren_niet_in_kubusdata) > 0 ){
       
       ontbrekende_jaren <<- c(ontbrekende_jaren, glue("<strong>{variabele}:</strong> {str_c(jaren_niet_in_kubusdata,collapse = ',')}")) 
     }
@@ -373,7 +385,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       variabel_namen <- var_label(data_totaal[[variabele]])
     }
     
-
     n_labels <- length(variabel_labels)
     
     #Excelbestand maken
@@ -388,7 +399,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     }
       
     
-    
     #Data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data")
     writeData(workbook,"Data",kubus_df)
@@ -399,7 +409,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     
     writeData(workbook, "Data_def",
               
-              cbind("col" = c(jaarvariabele,
+              cbind("col" = c(type_periode,
                               "Niveaucode",
                               if_else(geolevel == "ggd","Regiocode","Gemeentecode"),
                               #Alle crossings
@@ -447,6 +457,21 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
               
               cbind("Dimensiecode" = c(crossings),
                     "Naam" = namen_crossings))
+    
+    #In De Swing viewer worden 'randtotalen' van crossings standaard als som uitgerekend.
+    #Een tabel over bijvoorbeeld de crossing leeftijd geeft dan de som van alle percentages
+    #als 'rijtotaal'. De som van de percentages voor verschillende leeftijden is een
+    #betekenisloos gegeven. Het gemiddelde percentage over alle leeftijden is wel nuttig
+    #De sheet Dimension_levels dient om de default aggregatie over crossings aan te passen naar mean
+    addWorksheet(workbook, sheetName = "Dimension_levels")
+    writeData(workbook,"Dimension_levels",
+              
+              cbind("Dimlevel code" = c(crossings),
+                    "Name" = namen_crossings,
+                    "Dimension code" = c(crossings),
+                    "AggregateType" = "Mean"
+                    )
+              )
     
     }
     #Sheets voor de de dimensies;
@@ -754,7 +779,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   
   melding_lege_groepen <- ""
   if(lege_rijen > 0){
-    print(1)
     melding_lege_groepen <- glue(
       "<strong style= 'color:red'>LET OP!</strong>
       <p>Voor <strong>{lege_rijen}</strong> uit de <strong>{totaal_rijen}</strong> rijen zijn er te weinig of geen observaties gevonden.
@@ -779,37 +803,39 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   
   melding_te_weinig_antwoorden <- ""
   
-  melding_te_weinig_antwoorden <- if(nrow(verwijderd_door_te_weinig_antwoorden) > 0 ){
+  if(nrow(verwijderd_door_te_weinig_antwoorden) > 0 ){
     
     names(verwijderd_door_te_weinig_antwoorden) <- c("periode","gebiedsindeling","variabele")
-    glue("
-          <strong style= 'color:red'>LET OP!</strong>
+    
+    melding_te_weinig_antwoorden <- glue(
+    "<strong style= 'color:red'>LET OP!</strong>
           <p> Er zijn groepsuitsplitsingen waarvoor geldt dat een antwoord meer dan 0 en minder dan het ingestelde minimum
-          van {minimum_per_cel} respondenten telde. 
-          
-          <strong> Alle data </strong> die bij de onderstaande combinaties van variabele, periode en gebiedsindeling hoort is 
-          verwijderd & als missing opgeslagen.  
-          
+          van {minimum_per_cel} respondenten telde.
+
+          <strong> Alle data </strong> die bij de onderstaande combinaties van variabele, periode en gebiedsindeling hoort is
+          verwijderd & als missing opgeslagen.
+
          {kable(verwijderd_door_te_weinig_antwoorden) %>% kable_styling('striped', full_width = F)}")
   }
-  
+
   showModal(
     modalDialog(
       HTML(
+        
         glue("<h3><strong> KLAAR! </h3></strong> <br>
                 <p><strong> Lees onderstaande meldingen over de uitvoering van de configuratie.</strong></p>
-               {melding_missing_overzicht}
-               {melding_missing_jaarvariabele}
-               {melding_alleen_maar_missing}
-               {melding_niet_opgeslagen}
-               {melding_ontbrekende_jaren}
-               {melding_lege_groepen}
-               {melding_te_weinig_antwoorden}
-               {melding_lange_namen}
-                          
-               <strong> Kubusbestanden zijn opgeslagen voor de volgende variabelen:</strong>
-               <ul><li>{str_c(variabelen[!variabelen %in% c(missing_variabele,var_kubusdata_niet_opgeslagen)],collapse = '</li><li>')}</li></ul>
-               <p>Kubusdata is te vinden in de map <strong>{gekozen_map}</strong> </p>"))))
+                
+             {melding_missing_overzicht}
+             {melding_missing_jaarvariabele}
+             {melding_alleen_maar_missing}
+             {melding_niet_opgeslagen}
+             {melding_ontbrekende_jaren}
+             {melding_lege_groepen}
+             {melding_te_weinig_antwoorden}
+             {melding_lange_namen}
+             <strong> Kubusbestanden zijn opgeslagen voor de volgende variabelen:</strong>
+             <ul><li>{str_c(variabelen[!variabelen %in% c(missing_variabele,var_kubusdata_niet_opgeslagen)],collapse = '</li><li>')}</li></ul>
+             <p>Kubusdata is te vinden in de map <strong>{gekozen_map}</strong> </p>"))))
 
 
   

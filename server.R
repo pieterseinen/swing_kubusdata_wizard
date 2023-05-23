@@ -129,17 +129,19 @@ server <- function(input,output, session){
       writeData(workbook, sheet = "algemeen",
                 cbind("bestandsnaam" = spss_bestandsnaam(),
                       "bron" = input$bron,
-                      "meer_jaren_in_bestand" = input$is_meer_jaar,
-                      "jaarvariabele" = ifelse(input$is_meer_jaar, input$jaarvariabele,
+                      "meer_jaren_in_bestand" = input$is_meer_perioden,
+                      "jaarvariabele" = ifelse(input$is_meer_perioden, input$jaarvariabele,
                                                input$type_periode),
-                      "jaren_voor_analyse" = ifelse(input$is_meer_jaar, str_c(input$jaren_analyse,collapse = ","),
+                      "jaren_voor_analyse" = ifelse(input$is_meer_perioden, str_c(input$jaren_analyse,collapse = ","),
                                                     input$naam_periode),
+                      "type_periode" = input$type_periode,
                       "is_gewogen" = input$is_gewogen,
                       "strata" = input$strata,
                       "weegfactor" = if(input$is_gewogen){input$weegfactor}else{""} ,
                       "gebiedsniveau" = input$gebiedsniveau,
                       "gebiedsindeling" = 
-                        if(input$gebiedsniveau == "ggd"){"Regiovar_met_uniekenaam"}else{
+                        if(input$gebiedsniveau %in% c("ggd","nederland") ){
+                          "Regiovar_met_uniekenaam"}else{
                           input$gebiedsindeling},
                       "minimum_observaties" = input$minimum_observaties,
                       "geen_crossings" = input$geen_crossings,
@@ -548,20 +550,50 @@ server <- function(input,output, session){
   
   #### UI/Inputs Perioden####
   
-  #Heeft de dataset meerdere jaren waar onderscheid tussen gemaakt moet worden
-  output$input_is_meer_jaar <- renderUI({
+  #Heeft de dataset meerdere perioden waar onderscheid tussen gemaakt moet worden
+  output$input_is_meer_perioden <- renderUI({
     validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = ""))
     
     #Als een config bewerkt wordt: neem instelling over in input 
     alvast_geselecteerd <- if(databron_uit_configuratie()){configuratie_algemeen()$meer_jaren_in_bestand}else{FALSE}
     
     
-    box(checkboxInput(inputId = "is_meer_jaar",
-                      label = "Per jaar analyseren?",
+    box(checkboxInput(inputId = "is_meer_perioden",
+                      label = "Per periode analyseren?",
                       value = alvast_geselecteerd,
                       width = "100%"),
         class = "cbcontainer")
     
+    
+  })
+  
+  #Er zijn verschillende soorten periode mogelijk in Swing. 
+  #Pickerinput voor periode
+  output$input_type_periode <- renderUI({
+    
+    validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = ""))
+    
+    #Input vullen met info uit config / of nieuw toegevoegde ingevoerde naam
+    alvast_geselecteerd <- if(!is.null(try(input$naam_nieuwe_periode, silent = T))){
+
+      #Als er een nieuwe naam is ingevoerd: selecteer die naam
+      input$naam_nieuwe_periode
+    }else if (databron_uit_configuratie() & !is.null(try(configuratie_algemeen()$periode, silent = T))){
+      #Als er een configuratie wordt bewerkt: selecteer periode uit config
+      configuratie_algemeen()$periode
+    }else{
+      #Als er nog niks gekozen is: "Kies een periode"
+      "Kies een periode"
+    }
+    
+    #Opties voor Type periode
+    perioden <- c("Jaar","Halfjaar","Kwartaal","Maand","Week","4Weken")
+    
+    pickerInput(inputId = "type_periode",
+                label = "Naam van type periode in Swing (bv. Jaar/Halfjaar/Kwartaal/Maand)",
+                choices =  unique(c(perioden,alvast_geselecteerd)),
+                selected = alvast_geselecteerd
+    )
     
   })
   
@@ -617,35 +649,22 @@ server <- function(input,output, session){
     alvast_geselecteerd <- if(databron_uit_configuratie()){configuratie_algemeen()$jaren_voor_analyse}else{NULL}
     
     textInput(inputId = "naam_periode",
-              label = "Naam periode",
+              label = "Naam periode (bijvoorbeeld '2022')",
               value = alvast_geselecteerd,
               width = "50%")
     
   })
-  #Input voor type periode; Alleen relevant wanneer er geen jaarvariabele in het bestand is opgegeven
-  output$input_type_periode <- renderUI({
-    validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = ""))
-    
-    
-    alvast_geselecteerd <- if(databron_uit_configuratie()){configuratie_algemeen()$jaarvariabele}else{NULL}
-    
-    textInput(inputId = "type_periode",
-              label = "Type periode",
-              value = alvast_geselecteerd,
-              width = "50%")
-    
-    
-  })
+  
   
   #### Voorwaarden Periode####
   #Checken of aan alle voorwaarden voor perioden is voldaan
-  periode_inputs <- reactive(list(input$is_meer_jaar,input$jaarvariabele,input$jaren_analyse, input$type_periode,input$naam_periode))
+  periode_inputs <- reactive(list(input$is_meer_perioden,input$jaarvariabele,input$jaren_analyse, input$type_periode,input$naam_periode))
   
   observeEvent(periode_inputs(),{
 
-    if(isTruthy(input$is_meer_jaar)){
+    if(isTruthy(input$is_meer_perioden)){
       #Relevante inputs tonen en verbergen
-      shinyjs::hide("input_type_periode")
+      # shinyjs::hide("input_type_periode")
       shinyjs::hide("input_naam_periode")
       shinyjs::show("input_jaarvariabele")
       shinyjs::show("input_jaren_analyse")
@@ -660,7 +679,7 @@ server <- function(input,output, session){
           shinyjs::disable("naar_gebiedsindeling1")
           
         }
-      #Als input$is_meer_jaar == F
+      #Als input$is_meer_perioden == F
       }else{
         #Relevante inputs tonen en verbergen
       shinyjs::show("input_type_periode")
@@ -698,7 +717,7 @@ server <- function(input,output, session){
     
     radioButtons("gebiedsniveau",
                  label = "Niveau gebied",
-                 choices = c("ggd","gemeente"),
+                 choices = c("ggd","gemeente","buurt21","wijk21","nederland","postcode"),
                  selected = alvast_geselecteerd
     )  
   })
@@ -728,7 +747,7 @@ server <- function(input,output, session){
     
                req(input$gebiedsniveau)
     
-               if(input$gebiedsniveau == "gemeente"){
+               if(!input$gebiedsniveau %in% c("ggd","nederland")){
                  
                  shinyjs::show("gebiedsindeling")
                  
@@ -1001,8 +1020,6 @@ server <- function(input,output, session){
       )
   }
   
-  #Optie om alleen data sheets te uploaden
-  
   #Als iemand op de maak_kubusdata knop klikt: Maak kubusdata
   observeEvent(input$maak_kubusdata,{
     
@@ -1017,11 +1034,14 @@ server <- function(input,output, session){
     if(is.null(geen_crossings))
       geen_crossings <- F
     
+    #Een aantal argumenten zijn nieuw en bestaan dus niet in oudere configuraties. Worden met try() uit configuratie gehaald
+    #zodat oude configuraties geen crash veroorzaken & er een standaard instelling wordt gebruikt in maak_kubusdata().
     maak_kubusdata(data_totaal = spss_data(),
                    
                    jaren_voor_analyse = configuratie_algemeen()$jaren_voor_analyse,
-                   heeft_meer_jaar = configuratie_algemeen()$meer_jaren_in_bestand,
+                   heeft_meer_perioden = configuratie_algemeen()$meer_jaren_in_bestand,
                    jaarvariabele = configuratie_algemeen()$jaarvariabele,
+                   type_periode = try(configuratie_algemeen()$type_periode),
                    is_gewogen = configuratie_algemeen()$is_gewogen,
                    weegfactor = configuratie_algemeen()$weegfactor,
                    gebiedsindeling = configuratie_algemeen()$gebiedsindeling,

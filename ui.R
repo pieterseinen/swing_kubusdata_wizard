@@ -164,18 +164,19 @@ ui <- fluidPage(
                            Als je dataset in het geheel samengevat kan worden in 1 periode: 
                            
                            <ul>
-                           <li> Laat <strong>Per jaar analyseren? </strong> uitstaan.</li> 
+                           <li> Laat <strong>Per periode analyseren? </strong> uitstaan.</li> 
                            <li> Vul bij <strong>Type Periode</strong> de indeling van de periode in (bijvoorbeeld: 'Jaar')</li>
                            <li> Vul bij <strong>Naam Periode</strong> de naam van de periode in (bijvoorbeeld: '2022')</li>
                            </ul>
                            </p>
                            
-                           <p>Als je dataset gegevens bevat die per jaar uitgesplitst moeten worden:
+                           <p>Als je dataset gegevens bevat die per periode uitgesplitst moeten worden:
                            <br>
                            <ul>
-                           <li> Vink <strong> Per jaar analyseren? </strong> aan </li> 
-                           <li> Kies de variabele die de periode vastlegt in het drop-down menu; <strong>Kies de jaarvariabele</strong></li>
-                           <li> Kies welke jaren uit de dataset meegenomen moeten worden in het selectiemenu 
+                           <li> Vink <strong> Per periode analyseren? </strong> aan </li> 
+                           <li> Kies de variabele die de periode vastlegt in het drop-down menu: <strong>Kies de jaarvariabele</strong></li>
+                           <li> Kies het type periode in het drop-down menu: <strong> Naam van type periode</strong></li>
+                           <li> Kies welke jaren uit de dataset meegenomen moeten worden in het selectiemenu:
                            <strong>Kies welke jaren meegnomen moeten worden</strong> </li> 
                            </ul>
                            </p>")))
@@ -184,11 +185,13 @@ ui <- fluidPage(
              column(6,       
                     box(width = 12,
                         fluidRow(
-                          uiOutput("input_is_meer_jaar")),
+                          uiOutput("input_is_meer_perioden")),
                         fluidRow(
+                        
+                          uiOutput("periode_toevoegen"),
                           uiOutput("input_jaarvariabele"),
                           uiOutput("input_jaren_analyse"),
-                          shinyjs::hidden(uiOutput("input_type_periode")),
+                          uiOutput("input_type_periode"),
                           shinyjs::hidden(uiOutput("input_naam_periode")))
                         ))
              ),
@@ -209,13 +212,16 @@ ui <- fluidPage(
                            <p> Stel op deze pagina in of de data op regioniveau of per gemeente geanalyseerd moet worden.
                            </p>
 
-                           <ul><li> <strong>Let op:</strong> De Wizard neemt aan dat de SPSS data <strong> alleen data uit de eigen regio </strong> bevat. 
-                           Als de data landelijke / bovenregionale data bevat wordt dit niet goed verwerkt. </li> 
+                           <ul><li> 
+                           <strong>Let op:</strong> Wanneer de gebiedsindelingen: 'ggd' of 'nederland' worden gekozen
+                           wordt er geen uitsplitsing gemaakt op gebiedsindeling. De bijbehorende dataset moet in dat geval dus alleen
+                           data bevatten van het gekozen gebied. Een GGD gebiedsindeling werkt bijvoorbeeld niet bij een dataset met landelijke data.
+                          
                            
-                           <li> De ingestelde regiocode voor Swing is <strong> {nr_regio} </strong>. Dit kan aangepast worden in global.R </li>
+                           <li> De ingestelde ggd/regiocode voor Swing is <strong> {nr_regio} </strong>. Dit kan aangepast worden in global.R </li>
                            
-                           <li> Als bij <strong>Niveau gebied</strong> 'gemeente' is gekozen moet in de dropdown
-                           <strong> Gebiedsindeling </strong> een variabele geselecteerd worden die de gemeenten vastlegt.</li>
+                           <li> Als bij <strong>Niveau gebied</strong> iets anders dan 'ggd' of 'nederland' is gekozen moet in de dropdown
+                           <strong> Gebiedsindeling </strong> een variabele geselecteerd worden die de gebiedsindeling vastlegt.</li>
                            </ul>
         
                            </p>"
@@ -269,8 +275,8 @@ ui <- fluidPage(
                                <strong> ALLE DATA </strong> van een gebied+periode verwijderen als er ook maar 1
                                uitsplitsing van kruisvariabelen te weinig observaties per vraag heeft.
                                
-                               Een gesprek met privacymensen over de implementatie regels als; 
-                               minimaal <5 per cel is misschien een beter idee. </p>
+                               Een gesprek met de eigen privacymensen over de grondslag en implementatie van een eis als; 
+                               'minimaal <5 ongewogen observaties per cel' is misschien een beter idee.  </p>
                                "),
                             
                           uiOutput("input_minimum_observaties_per_antwoord")
@@ -327,7 +333,7 @@ ui <- fluidPage(
                                <li> Selecteer <strong> Alleen 'Data' sheets maken </strong> als de gemaakte bestanden alleen data moeten bevatten
                                Dit is nuttig om data aan te vullen van indicatoren die al in Swing staan. De gemaakte .xlsx bestanden bevatten
                                dan geen metadata. Hierdoor zullen de namen van indicatoren/dimensies niet overschreven worden bij een upload naar Swing.
-                               Dit voorkomt dat handmatige aanpassingen van namen in Swing teniet worden gedaan.
+                               Dit voorkomt dat eventuele handmatige aanpassingen van namen in Swing teniet worden gedaan.
                                </li>
                                </ul>
                                "))
@@ -341,7 +347,7 @@ ui <- fluidPage(
                           
                           uiOutput("geen_map_gekozen"),
                           shinyDirButton("folder","Selecteer een map voor kubusdata","Kies een bestemming voor kubusdata", F),
-                          checkboxInput("alleen_data","Alleen 'Data' sheets maken")
+                          checkboxInput("alleen_data","Alleen 'Data' sheets maken (t.b.v. nieuwe data voor bestaande indicatoren)")
                           )
                       )
              ),
