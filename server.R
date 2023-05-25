@@ -1,5 +1,4 @@
 server <- function(input,output, session){
-  
 #### Data & Configuratiebestanden ####
   
 #Reactive df met SPSS data. 
@@ -144,8 +143,7 @@ server <- function(input,output, session){
                           "Regiovar_met_uniekenaam"}else{
                           input$gebiedsindeling},
                       "minimum_observaties" = input$minimum_observaties,
-                      "geen_crossings" = input$geen_crossings,
-                      "minimum_observaties_per_antwoord" = input$minimum_observaties_per_antwoord)
+                      "geen_crossings" = input$geen_crossings)
       )
       
       #Variabelen toevoegen
@@ -670,7 +668,11 @@ server <- function(input,output, session){
       shinyjs::show("input_jaren_analyse")
       
       #Is er een var geselecteerd & zijn er jaren uitgekozen?
-      if(isTruthy(input$jaarvariabele != "Kies een variabele") & isTruthy(length(input$jaren_analyse) > 0 )){
+      if(isTruthy(input$jaarvariabele != "Kies een variabele") & 
+         isTruthy(length(input$jaren_analyse) > 0 ) & 
+         isTruthy(input$type_periode != "Kies een periode")
+         
+         ){
         
           shinyjs::enable("naar_gebiedsindeling1")
           
@@ -687,7 +689,10 @@ server <- function(input,output, session){
       shinyjs::hide("input_jaarvariabele")
       shinyjs::hide("input_jaren_analyse")
       
-      if(isTruthy(nchar(input$type_periode) > 0) & isTruthy(nchar(input$naam_periode) > 0)){
+      if( 
+         isTruthy(nchar(input$naam_periode) > 0) & 
+         isTruthy(input$type_periode != "Kies een periode")
+         ){
         shinyjs::enable("naar_gebiedsindeling1")
       }else{
         shinyjs::disable("naar_gebiedsindeling1")
@@ -817,22 +822,6 @@ server <- function(input,output, session){
     
   })
   
-  #Inout voor minimum observaties per antwoord
-  output$input_minimum_observaties_per_antwoord <- renderUI({
-    validate(need(is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg", message = ""))
-    
-    alvast_geselecteerd <- if(databron_uit_configuratie()){
-      #In een try toegewezen, zodat oude configuraties (zonder deze parameter, niet crashen)
-      try(configuratie_algemeen()$minimum_observaties_per_antwoord)
-      }else{
-        NULL
-      }
-    
-    numericInput("minimum_observaties_per_antwoord","Minimum aantal observaties per antwoord", 
-                 value = alvast_geselecteerd,
-                 width = "100%")
-    
-  })
   
   #ReactivVal om bestandsnaam configuratie in op te slaan
   #Wordt bijgewerkt bij lezen van configuratie / opslaan van nieuwe configuratie
@@ -983,7 +972,9 @@ server <- function(input,output, session){
     
     if(input$swing_wizard == "lees_configuratie"){
       
-    if(!(crossing_labels_compleet() & variabele_labels_compleet() & gebiedsindeling_labels_compleet())){
+    if(!(crossing_labels_compleet() & variabele_labels_compleet()
+         # & gebiedsindeling_labels_compleet()
+         )){
 
       sendSweetAlert(session = session,
                      title = "Fout",
@@ -1053,8 +1044,7 @@ server <- function(input,output, session){
                    session = session,
                    gekozen_map = gekozen_map(),
                    alleen_data = input$alleen_data, 
-                   geen_crossings = geen_crossings,
-                   minimum_per_cel = try(configuratie_algemeen()$minimum_observaties_per_antwoord)
+                   geen_crossings = geen_crossings
     )
   })
   
@@ -1169,58 +1159,57 @@ server <- function(input,output, session){
       scroll_box(height = "500px")
   }
   
-  #Gebiedsindeling valideren
-  df_gebiedsindeling_levels <- reactive({
-    
-    variabele_gebied <- configuratie_algemeen()$gebiedsindeling
-    
-    variabele_label <- var_label(spss_data()[[variabele_gebied]])
-    variabele_values <- unname(val_labels(spss_data()[[variabele_gebied]]))
-    variabele_value_labels <- names(val_labels(spss_data()[[variabele_gebied]]))
-    
-    
-    if(is.null(variabele_label)){variabele_label <- NA}
-    if(is.null(variabele_values)){variabele_values <- NA}
-    if(is.null(variabele_value_labels)){variabele_value_labels <- NA}
-    
-                                    
-    data.frame(
-      "variabele" = variabele_gebied,
-      "variabele_label" = variabele_label,
-      "values" = variabele_values,
-      "value_labels" = variabele_value_labels
-      )
-    
-    
-    
-  })
+  #Gebiedsindeling hoeft niet volledige labels te hebben.
   
-  #Zijn alle labels er voor gebiedsindeling?
-  gebiedsindeling_labels_compleet <- reactive({
-    #Er mogen geen variabele / value labels ontbreken. 
-    !any(is.na(df_gebiedsindeling_levels()$value_labels)) & !any(is.na(df_gebiedsindeling_levels()$variabele_label))
-    
-  })
-  
-  
-  #Tabel renderen met overzicht gebiedsindeling
-  output$overzicht_gebiedsindeling <- function(){
-    validate(need(nchar(locatie_configuratiebestand()) > 0 & 
-                    locatie_configuratiebestand() != "leeg"
-                  ,""))
-    #Tabel output
-    df_gebiedsindeling_levels() %>%
-      knitr::kable("html") %>%
-      kable_styling("striped", full_width = F) %>%
-      add_header_above(c("Gebiedsindeling" = 4))%>%
-      scroll_box(height = "500px")
-  }
+  # #Gebiedsindeling valideren
+  # df_gebiedsindeling_levels <- reactive({
+  #   
+  #   variabele_gebied <- configuratie_algemeen()$gebiedsindeling
+  #   
+  #   variabele_label <- var_label(spss_data()[[variabele_gebied]])
+  #   variabele_values <- unname(val_labels(spss_data()[[variabele_gebied]]))
+  #   variabele_value_labels <- names(val_labels(spss_data()[[variabele_gebied]]))
+  #   
+  #   
+  #   if(is.null(variabele_label)){variabele_label <- NA}
+  #   if(is.null(variabele_values)){variabele_values <- NA}
+  #   if(is.null(variabele_value_labels)){variabele_value_labels <- NA}
+  #   
+  #                                   
+  #   data.frame(
+  #     "variabele" = variabele_gebied,
+  #     "variabele_label" = variabele_label,
+  #     "values" = variabele_values,
+  #     "value_labels" = variabele_value_labels
+  #     )
+  #   
+  #   
+  #   
+  # })
+  # 
+  # #Zijn alle labels er voor gebiedsindeling?
+  # gebiedsindeling_labels_compleet <- reactive({
+  #   #Er mogen geen variabele / value labels ontbreken. 
+  #   !any(is.na(df_gebiedsindeling_levels()$value_labels)) & !any(is.na(df_gebiedsindeling_levels()$variabele_label))
+  #   
+  # })
+  # 
+  # 
+  # #Tabel renderen met overzicht gebiedsindeling
+  # output$overzicht_gebiedsindeling <- function(){
+  #   validate(need(nchar(locatie_configuratiebestand()) > 0 & 
+  #                   locatie_configuratiebestand() != "leeg"
+  #                 ,""))
+  #   #Tabel output
+  #   df_gebiedsindeling_levels() %>%
+  #     knitr::kable("html") %>%
+  #     kable_styling("striped", full_width = F) %>%
+  #     add_header_above(c("Gebiedsindeling" = 4))%>%
+  #     scroll_box(height = "500px")
+  # }
  
   
   
   
 
 }
-
-
-

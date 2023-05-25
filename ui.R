@@ -270,16 +270,7 @@ ui <- fluidPage(
                         fluidRow(
                           uiOutput("input_weegfactor"),
                           uiOutput("input_minimum_observaties"),
-                          HTML("<strong style= 'color:red'> LET OP! Onderstaande opties kan erg veel data verwijderen! </strong> 
-                               <p> Omdat dit niet achteraf in Swing kan moeten we bij kubusdata
-                               <strong> ALLE DATA </strong> van een gebied+periode verwijderen als er ook maar 1
-                               uitsplitsing van kruisvariabelen te weinig observaties per vraag heeft.
-                               
-                               Een gesprek met de eigen privacymensen over de grondslag en implementatie van een eis als; 
-                               'minimaal <5 ongewogen observaties per cel' is misschien een beter idee.  </p>
-                               "),
-                            
-                          uiOutput("input_minimum_observaties_per_antwoord")
+
                           )
                         )
                     )
@@ -357,8 +348,9 @@ ui <- fluidPage(
              fluidRow(
                br(),
                column(4,uiOutput("overzicht_crossings") %>% shinycssloaders::withSpinner()),
-               column(4,uiOutput("overzicht_variabelen")%>% shinycssloaders::withSpinner()),
-               column(4,uiOutput("overzicht_gebiedsindeling")%>% shinycssloaders::withSpinner())
+               column(4,uiOutput("overzicht_variabelen")%>% shinycssloaders::withSpinner())
+               # ,
+               # column(4,uiOutput("overzicht_gebiedsindeling")%>% shinycssloaders::withSpinner())
 
                ),
              
