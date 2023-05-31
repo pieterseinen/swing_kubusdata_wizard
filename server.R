@@ -33,9 +33,6 @@ server <- function(input,output, session){
     var_label(df$dummy_crossing) <- "Dummy crossing"
     val_label(df$dummy_crossing, 1) <- "Dummy waarde"
     
-    df$testvar <- df[,20]
-    var_label(df$testvar) <- "Testvariabele"
-    
     df
   })
   

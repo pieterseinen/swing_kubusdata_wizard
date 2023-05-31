@@ -15,12 +15,6 @@ minimum_obs_per_rij <- 2
 #Waarde -99997 past bij Swings default Special value voor 'empty'
 missing_voor_convenant <- -99997
 
-#Privacymensen van een aantal GGD'en zijn van mening dat percentages van antwoorden met minder dan
-#5 ongewogen respondenten niet gepubliceerd mogen worden vanwege herleidbaarheid. Gebruiker kan zelf een minimum instellen.
-#Waarde -99996 past bij Swings default special value voor 'hidden'
-missing_voor_privacy <- -99996
-
-
 #Swing kan labels van maximaal 100 tekens verwerken. Automatische naamgeving
 #maakt zonodig kortere labels door arbitrair het einde van een var/val-label af te knippen.
 #Er wordt een waarschuwing aan de gebruiker gegeven dat dit gebeurd is.
@@ -114,7 +108,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   data_totaal <- data_totaal %>% dplyr::select(all_of(gebruikte_variabelen))
   
   #assign naar global environment tbv testen
-  data_totaal <<- data_totaal
+  # data_totaal <<- data_totaal
   
   #Variabele die increment om voortgang bij te houden
   #zie rij_per_combinatie_crossings
@@ -132,7 +126,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   var_kubusdata_niet_opgeslagen <- c()
   
   #Dataframe dat bijhoudt of er data is geanonimiseerd vanwege te kleine aantallen per cel
-  verwijderd_door_te_weinig_antwoorden <- data.frame()
+  # verwijderd_door_te_weinig_antwoorden <- data.frame()
   
   #variabele die het totaal aantal observaties bijhoudt
   aantal_observaties <- nrow(data_totaal)
