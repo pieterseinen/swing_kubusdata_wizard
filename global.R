@@ -250,7 +250,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     names(kubus_df) <- c(jaarvariabele,gebiedsindeling,crossings,'n_ongewogen',namen_variabel_kolommen)
     
     #Functie om te kleine aantallen per groep te verwijderen
-    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij & ongewogen != missing_voor_privacy){missing_voor_convenant}else{x}}
+    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}}
     
     #Na pivot opnieuw groeperen en summarizen, daarna te lage aantallen weghalen
     kubus_df <- kubus_df %>%
@@ -275,7 +275,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     names(kubus_df)[length(names(kubus_df))] <- glue("{variabele}_ONG")
 
     totaal_rijen <<- nrow(kubus_df)
-    lege_rijen <<- nrow(kubus_df[kubus_df[[length(kubus_df)]] == missing_voor_convenant,])
+    lege_rijen <<- nrow(kubus_df[kubus_df[[length(kubus_df)]] == missing_voor_privacy,])
 
     #We willen een melding geven wanneer er jaren voor analyse zijn opgegeven die niet in de data terugkomen.
     #Welke jaren zijn opgeslagen
