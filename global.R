@@ -19,7 +19,7 @@ naam_regio <- "Gelderland-Zuid"
 #Minimum aantal observaties per groepsindeling waarbij data geupload mag worden naar ABF 
 minimum_obs_per_rij <- 2
 #Waarde -99997 past bij Swings default Special value voor 'empty'
-missing_voor_privacy <- -99997
+missing_voor_privacy <- -99996
 
 #Swing kan labels van maximaal 100 tekens verwerken. Automatische naamgeving
 #maakt zonodig kortere labels door arbitrair het einde van een var/val-label af te knippen.
