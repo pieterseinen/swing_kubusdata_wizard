@@ -18,7 +18,7 @@ naam_regio <- "Gelderland-Zuid"
 #GGDGHOR verstaat daaronder ook groepsindelingen van 1.
 #Minimum aantal observaties per groepsindeling waarbij data geupload mag worden naar ABF 
 minimum_obs_per_rij <- 2
-#Waarde -99997 past bij Swings default Special value voor 'empty'
+#Waarde -99996 past bij Swings default Special value voor 'missing'
 missing_voor_privacy <- -99996
 
 #Swing kan labels van maximaal 100 tekens verwerken. Automatische naamgeving
