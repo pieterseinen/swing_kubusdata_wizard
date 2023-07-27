@@ -827,12 +827,28 @@ server <- function(input,output, session){
   
   #Knop: Configuratie opslaan
   output$input_maak_configuratie <- renderUI({
+    # 
+    # cat(glue("spss_bestand is list {is.list(input$spss_bestand} \n
+    #          locatie_configuratiebestand()!= leeg {locatie_configuratiebestand() != 'leeg')} \n
+    #          nchar input crossings {nchar(input$crossings)} \n
+    #          nchar input variabelen {nchar(input$variabelen)} \n
+    #          input gebiedsniveau == ggd {(input$gebiedsniveau == 'ggd'} \n
+    #          nchar gebiedsindeling {nchar(input$gebiedsindeling)} \n
+    #          input gebiedsindeling {input$gebiedsindeling}
+    #          
+    #          
+    #          "))
+    # 
+    
+    print(glue("input$crossings: {input$crossings}"))
+    print(glue("input$variabelen: {input$variabelen}"))
+    
     validate(need(
       #Knop alleen renderen wanneer er een spss bestand gelezen uit fileInput of configuratiebestand 
       (is.list(input$spss_bestand) | locatie_configuratiebestand() != "leeg") &&
         #Knop alleen renderen wanneer de volgende parameters ingevuld zijn:
         #crossings, variabelen, gebiedsindeling
-        (nchar(input$crossings) > 0 && nchar(input$variabelen) > 0 &&
+        (length(input$crossings) > 0 && length(input$variabelen) > 0 &&
         (input$gebiedsniveau == "ggd" || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
          
         ), message = ""))

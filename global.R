@@ -4,9 +4,9 @@
 # basismap_configuraties <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/Configuraties"
 
 
-basismap_output <- "C:/Projecten/R/testmap_swing_wizard"
-basismap_spss_bestanden <- "C:/Projecten/R/testmap_swing_wizard"
-basismap_configuraties <- "C:/Projecten/R/testmap_swing_wizard"
+basismap_output <- "C:/Projecten/R/testmap_swing_wizard/Data voor Swing"
+basismap_spss_bestanden <- "C:/Projecten/R/testmap_swing_wizard/SPSS data"
+basismap_configuraties <- "C:/Projecten/R/testmap_swing_wizard/Configuraties"
 
 
 nr_regio <- 2014
