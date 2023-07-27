@@ -194,6 +194,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       filter(.[[jaarvariabele]] %in% jaren_voor_analyse,
              !is.na(.[[variabele]]),
              !is.na(.[[gebiedsindeling]]),
+             !is.na(weegfactor),
              across(.cols = all_of(crossings) ,
                     .fns = ~ !is.na(.x))) %>%
       mutate(n = 1,
