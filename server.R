@@ -136,7 +136,7 @@ server <- function(input,output, session){
                       "weegfactor" = if(input$is_gewogen){input$weegfactor}else{""} ,
                       "gebiedsniveau" = input$gebiedsniveau,
                       "gebiedsindeling" = 
-                        if(input$gebiedsniveau %in% c("ggd","nederland") ){
+                        if(input$gebiedsniveau %in% c("ggd","nederland","provincie")){
                           "Regiovar_met_uniekenaam"}else{
                           input$gebiedsindeling},
                       "minimum_observaties" = input$minimum_observaties,
@@ -719,7 +719,7 @@ server <- function(input,output, session){
     
     radioButtons("gebiedsniveau",
                  label = "Niveau gebied",
-                 choices = c("ggd","gemeente","buurt21","wijk21","nederland","postcode"),
+                 choices = c("ggd","gemeente","buurt21","wijk21","nederland","provincie","postcode"),
                  selected = alvast_geselecteerd
     )  
   })
@@ -749,7 +749,7 @@ server <- function(input,output, session){
     
                req(input$gebiedsniveau)
     
-               if(!input$gebiedsniveau %in% c("ggd","nederland")){
+               if(!input$gebiedsniveau %in% c("ggd","nederland","provincie")){
                  
                  shinyjs::show("gebiedsindeling")
                  
@@ -849,7 +849,7 @@ server <- function(input,output, session){
         #Knop alleen renderen wanneer de volgende parameters ingevuld zijn:
         #crossings, variabelen, gebiedsindeling
         (length(input$crossings) > 0 && length(input$variabelen) > 0 &&
-        (input$gebiedsniveau %in% c("ggd","nederland") || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
+        (input$gebiedsniveau %in% c("ggd","nederland","provincie") || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
         ), message = ""))
     
     
