@@ -849,8 +849,7 @@ server <- function(input,output, session){
         #Knop alleen renderen wanneer de volgende parameters ingevuld zijn:
         #crossings, variabelen, gebiedsindeling
         (length(input$crossings) > 0 && length(input$variabelen) > 0 &&
-        (input$gebiedsniveau == "ggd" || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
-         
+        (input$gebiedsniveau %in% c("ggd","nederland") || (nchar(input$gebiedsindeling) > 0 &&  input$gebiedsindeling != "Kies een variabele")) 
         ), message = ""))
     
     
