@@ -213,8 +213,8 @@ ui <- fluidPage(
                            </p>
 
                            <ul><li> 
-                           <strong>Let op:</strong> Wanneer de gebiedsindelingen: 'ggd' of 'nederland' worden gekozen
-                           wordt er geen uitsplitsing gemaakt op gebiedsindeling. De bijbehorende dataset moet in dat geval dus alleen
+                           <strong>Let op:</strong> Wanneer de gebiedsindelingen: 'ggd','provincie' of 'nederland' worden gekozen
+                           wordt er <strong> geen </strong> uitsplitsing gemaakt op gebiedsindeling. De bijbehorende dataset moet in dat geval dus alleen
                            data bevatten van het gekozen gebied. Een GGD gebiedsindeling werkt bijvoorbeeld niet bij een dataset met landelijke data.
                           
                            
