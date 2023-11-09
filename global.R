@@ -354,7 +354,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                 
                 "Naam" = c(unlist(lapply(names(variabel_labels), function(x){glue({"Aantal {x}"})})), 
                            "Totaal aantal ongewogen"),
-                "Eenheid" = rep("Personen",n_labels,+1))
+                "Eenheid" = rep("Personen",n_labels+1))
               )
     
     
