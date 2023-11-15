@@ -563,6 +563,15 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                             min_observaties
                                           }else{
                                             rep(min_observaties,n_labels)}),
+
+                    #_ONG ongewogen aantallen  als treshold indicator
+                    "Treshold Indicator" = c(rep("",n_labels+2),
+                                          #aantal rijen voor percentages = levels variabele
+                                          if(is_dichotoom){
+                                            glue("{variabele}_ONG")
+                                          }else{
+                                            rep(glue("{variabele}_ONG"),n_labels)}),
+                  
                     #Cube is overal 1
                     "Cube" = c(rep(1,n_labels+2),
                                if(is_dichotoom){
