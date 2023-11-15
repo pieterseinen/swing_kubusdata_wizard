@@ -3,7 +3,6 @@
 # basismap_spss_bestanden <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/SPSS data"
 # basismap_configuraties <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/Configuraties"
 
-
 basismap_output <- "C:/Projecten/R/testmap_swing_wizard/Data voor Swing"
 basismap_spss_bestanden <- "C:/Projecten/R/testmap_swing_wizard/SPSS data"
 basismap_configuraties <- "C:/Projecten/R/testmap_swing_wizard/Configuraties"
@@ -98,6 +97,12 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                            min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
                            geen_crossings){
   
+  #is_kubus. Om te zorgen dat bij platte data de waarde "Cube" op tabblad "Indicators" wordt aangepast. 
+  #afgeleid van geen_crossings; boolean value omdraaien dus, daarna naar numeric omzetten
+        is_kubus = (geen_crossings != T) %>% as.numeric()
+
+
+        
   #Alle variabelen die NIET gebruikt worden wegfilteren. Zou de snelheid van subsetten ten goede moeten komen
   jaarvariabele_in_data <- NULL
   jaarvariabele_in_data <- if(heeft_meer_perioden){jaarvariabele}
@@ -571,13 +576,13 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                             glue("{variabele}_ONG")
                                           }else{
                                             rep(glue("{variabele}_ONG"),n_labels)}),
-                  
-                    #Cube is overal 1
+
+                    #Is kubus geeft 1 als er crossings zijn gekozen. Anders 0 (platte data) 
                     "Cube" = c(rep(1,n_labels+2),
                                if(is_dichotoom){
-                                 1
+                                is_kubus
                                }else{
-                                 rep(1,n_labels)}),
+                                 rep(is_kubus,n_labels)}),
                     #Source is overal hetzelfde
                     "Source" = c(rep(bron,n_labels+2),
                                  if(is_dichotoom){
