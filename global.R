@@ -379,20 +379,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
               cbind("Dimensiecode" = c(crossings),
                     "Naam" = namen_crossings))
     
-    #In De Swing viewer worden 'randtotalen' van crossings standaard als som uitgerekend.
-    #Een tabel over bijvoorbeeld de crossing leeftijd geeft dan de som van alle percentages
-    #als 'rijtotaal'. De som van de percentages voor verschillende leeftijden is een
-    #betekenisloos gegeven. Het gemiddelde percentage over alle leeftijden is wel nuttig.
-    #De sheet Dimension_levels dient om de default aggregatie over crossings aan te passen naar mean
-    addWorksheet(workbook, sheetName = "Dimension_levels")
-    writeData(workbook,"Dimension_levels",
-              
-              cbind("Dimlevel code" = c(crossings),
-                    "Name" = namen_crossings,
-                    "Dimension code" = c(crossings),
-                    "AggregateType" = "Mean"
-                    )
-              )
     
     }
     #Sheets voor de de dimensies;
