@@ -115,8 +115,13 @@ ui <- fluidPage(
                            
                            <li> Als er al een configuratie bestaat met dezelfde bestandsnaam kan gekozen worden deze te overschrijven. </li>
                            
-                           <li> Als je 'platte data' wilt genereren kan dat door de checkbox <strong>Geen crossings</strong> te selecteren.</li>
+                           <li> Als je 'platte data' wilt maken kan dat door de checkbox <strong>Geen crossings</strong> te selecteren.</li>
                            
+                           <li> Als je een 'platte kubus' wilt maken kan dat door de checkbox <strong>Platte kubus</strong> te selecteren.
+                           Let op! Dit is een experimentele functie die niet geintegreerd is met de popup die na het uitvoeren van een configuratie verschijnt.
+                           De popup met een overzicht van de missings zal per crossing verschijnen en daarom niet erg nuttig zijn.
+                           
+                           </li>
                            
                            <li> Om verder te kunnen moet minstens geselecteerd worden: 
                            <ul><li>1 variabele</li>
@@ -134,8 +139,8 @@ ui <- fluidPage(
              column(6,
                     box(width = 12,
                         fluidRow(
-                          column(12, offset = 5,
-                          div(checkboxInput("geen_crossings","Geen crossings"),style = "height: 30px; align:center;")),
+                          column(6,checkboxInput("geen_crossings","Geen crossings")),
+                          column(6, checkboxInput("platte_kubus","Platte kubus*")),
                           uiOutput("input_crossings")),
                         fluidRow(
                           uiOutput("input_variabelen"),
