@@ -556,7 +556,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                             rep(min_observaties,n_labels)}),
 
                     #_ONG ongewogen aantallen  als treshold indicator
-                    "Treshold Indicator" = c(rep("",n_labels+2),
+                    "Threshold Indicator" = c(rep("",n_labels+2),
                                           #aantal rijen voor percentages = levels variabele
                                           if(is_dichotoom){
                                             glue("{variabele}_ONG")
