@@ -95,7 +95,7 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_perioden = FALSE, jaarvariabele = NULL, type_periode = NULL,
                            is_gewogen = FALSE,weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
                            min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
-                           geen_crossings){
+                           geen_crossings, bestandslabel_platte_kubus = ""){
   
   #is_kubus. Om te zorgen dat bij platte data de waarde "Cube" op tabblad "Indicators" wordt aangepast. 
   #afgeleid van geen_crossings; boolean value omdraaien dus, daarna naar numeric omzetten
@@ -556,7 +556,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
                                             rep(min_observaties,n_labels)}),
 
                     #_ONG ongewogen aantallen  als treshold indicator
-                    "Treshold Indicator" = c(rep("",n_labels+2),
+                    "Threshold Indicator" = c(rep("",n_labels+2),
                                           #aantal rijen voor percentages = levels variabele
                                           if(is_dichotoom){
                                             glue("{variabele}_ONG")
@@ -582,7 +582,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     #variabelnaam opslaan voor een foutbericht na het uitvoeren van een configuratie
     tryCatch({
       
-      saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}.xlsx"), overwrite = TRUE)
+      saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}{bestandslabel_platte_kubus}.xlsx"), overwrite = TRUE)
       
     },
     error = function(cond){

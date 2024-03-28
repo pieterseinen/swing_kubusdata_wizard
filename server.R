@@ -140,7 +140,9 @@ server <- function(input,output, session){
                           "Regiovar_met_uniekenaam"}else{
                           input$gebiedsindeling},
                       "minimum_observaties" = input$minimum_observaties,
-                      "geen_crossings" = input$geen_crossings)
+                      "geen_crossings" = input$geen_crossings,
+                      "platte_kubus" = input$platte_kubus
+                      )
       )
       
       #Variabelen toevoegen
@@ -447,6 +449,8 @@ server <- function(input,output, session){
     if(input$geen_crossings){
       
     shinyjs::hide("input_crossings")
+    shinyjs::disable("platte_kubus")
+    updateCheckboxInput(session,"platte_kubus",value =  F)
     
     #input bijwerken om dummy crossing te selecteren
     updateMultiInput(session, inputId = "crossings", selected = "dummy_crossing")
@@ -459,6 +463,7 @@ server <- function(input,output, session){
     updateMultiInput(session, inputId = "crossings", selected = opgeslagen_crossings())
       
     shinyjs::show("input_crossings")
+    shinyjs::enable("platte_kubus")
       
     }
   })
@@ -1037,6 +1042,51 @@ server <- function(input,output, session){
     if(is.null(geen_crossings))
       geen_crossings <- F
     
+    #zo ook voor platte kubus
+    platte_kubus <- try(configuratie_algemeen()$platte_kubus, silent = T)
+    if(is.null(platte_kubus))
+      platte_kubus <- F
+    
+    #2023-03-21 ITT tot alle andere configuratievariabelen gaat de nieuwe variabele platte kubus niet mee in de 
+    #maak_kubusdata() functie.
+    
+    #Een simpelere aanpassing is om de functie bij platte kubussen per crossing apart aan te roepen.
+    #Het is lelijk, maar het kost me minder tijd.
+    
+    #Als platte kubus aanstaat
+    if(platte_kubus){
+      #Loop over elke crossing heen
+      for(i in configuratie_crossings()){
+   
+        #Maak een kubus voor crossing I
+        maak_kubusdata(data_totaal = spss_data(),
+                       jaren_voor_analyse = configuratie_algemeen()$jaren_voor_analyse,
+                       heeft_meer_perioden = configuratie_algemeen()$meer_jaren_in_bestand,
+                       jaarvariabele = configuratie_algemeen()$jaarvariabele,
+                       type_periode = try(configuratie_algemeen()$type_periode),
+                       is_gewogen = configuratie_algemeen()$is_gewogen,
+                       weegfactor = configuratie_algemeen()$weegfactor,
+                       gebiedsindeling = configuratie_algemeen()$gebiedsindeling,
+                       geolevel = configuratie_algemeen()$gebiedsniveau,
+                       variabelen = configuratie_variabelen(),
+                       #Hier aangepast
+                       crossings = i,
+                       min_observaties = configuratie_algemeen()$minimum_observaties,
+                       bron = configuratie_algemeen()$bron,
+                       session = session,
+                       gekozen_map = gekozen_map(),
+                       alleen_data = input$alleen_data, 
+                       geen_crossings = geen_crossings,
+                       #Voeg suffix met crossing toe aan bestandsnaam  
+                       bestandslabel_platte_kubus = glue("_{i}"))
+        }
+      
+
+      
+    }else{
+    
+    
+    
     #Een aantal argumenten zijn nieuw en bestaan dus niet in oudere configuraties. Worden met try() uit configuratie gehaald
     #zodat oude configuraties geen crash veroorzaken & er een standaard instelling wordt gebruikt in maak_kubusdata().
     maak_kubusdata(data_totaal = spss_data(),
@@ -1058,6 +1108,7 @@ server <- function(input,output, session){
                    alleen_data = input$alleen_data, 
                    geen_crossings = geen_crossings
     )
+    }
   })
   
   #### Voorwaarden Configuratie uitvoeren ####
