@@ -1,6 +1,12 @@
 # swing_kubusdata_wizard
 Shiny applicatie om monitordata uit SPSS om te zetten naar kubusdata voor Swing. Bedoeld om lokaal uit te voeren.
 
+> [!IMPORTANT]  
+> - "Watch" deze repository om een notificatie te krijgen wanneer er een update is.
+> - Creëer hier een issue als er een issue is. Liever niet per mail.
+> - Ik ben in mijn huidige functie niet betrokken bij Swing. Ik zal de repository zelf niet actief updaten.
+> - Kijk je output goed na en kijk ook na hoe je visualisaties er in Swing uitzien voordat je het naar productie brengt.
+
 Benodigdheden:
 - R & Rstudio
 - Een SPSS .sav-bestand met monitordata
