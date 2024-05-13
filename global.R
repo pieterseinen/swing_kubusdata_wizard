@@ -3,13 +3,13 @@
 # basismap_spss_bestanden <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/SPSS data"
 # basismap_configuraties <- "P:/0. Beveiligd/27. Swing/Kubusdata Monitor Maken/Configuraties"
 
-basismap_output <- "C:/Projecten/R/testmap_swing_wizard/Data voor Swing"
-basismap_spss_bestanden <- "C:/Projecten/R/testmap_swing_wizard/SPSS data"
-basismap_configuraties <- "C:/Projecten/R/testmap_swing_wizard/Configuraties"
+basismap_output <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/Output/"
+basismap_spss_bestanden <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/SPSS data"
+basismap_configuraties <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/Configuraties"
 
 
-nr_regio <- 2014
-naam_regio <- "Gelderland-Zuid"
+nr_regio <- 1413
+naam_regio <- "Noord- en Oost-Gelderland"
 
 #Swing herkent (verschillende instelbare) waarden die missing aangeven 
 
@@ -95,7 +95,7 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_perioden = FALSE, jaarvariabele = NULL, type_periode = NULL,
                            is_gewogen = FALSE,weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
                            min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
-                           geen_crossings, bestandslabel_platte_kubus = ""){
+                           geen_crossings){
   
   #is_kubus. Om te zorgen dat bij platte data de waarde "Cube" op tabblad "Indicators" wordt aangepast. 
   #afgeleid van geen_crossings; boolean value omdraaien dus, daarna naar numeric omzetten
@@ -189,7 +189,6 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
   }
   
 
-
   #Voor alle variabelen
   lapply(variabelen, function(variabele){
 
@@ -202,14 +201,14 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
              !is.na(weegfactor),
              across(.cols = all_of(crossings) ,
                     .fns = ~ !is.na(.x))) %>%
-      mutate(n = 1,
-             var = factor(.[[variabele]],
+      mutate(var = factor(.[[variabele]],
                           levels = val_labels(.[[variabele]]),
                           labels = names(val_labels(.[[variabele]]))))%>%
       group_by(.[[jaarvariabele]],.[[gebiedsindeling]], across(all_of(crossings)), var) %>%
       summarise(n_gewogen = sum(weegfactor),
-                n_ongewogen = sum(n)) %>%
-      ungroup()
+                n_ongewogen = n()) %>%
+      ungroup() #%>%
+      #mutate(geolevel=geolevel, .after=`.[[jaarvariabele]]`)
 
     #Als je een variabele opgeeft die (icm crossings / jaren) alleen maar missing kent crasht de boel.
     #Je kan immers geen kruistabel maken met niks.
@@ -225,13 +224,35 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       return()
       
     }
-    
 
-    
     #Nu pivotten naar breed zodat er een kolom is voor ieder antwoord  
+    # Let op: dit lijkt een gigantische omweg, maar deze manier van werken is nodig om fouten te voorkomen. 
+    # Wanneer pivot_wider() wordt gebruikt selecteert 'ie groepen op basis van alle kolommen BEHALVE de gevraagde variabelen. 
+    # In de praktijk betekent dit dat er groepen gemaakt worden op basis van jaar, gebied, crossings, en n_gewogen. Dat betekent
+    # vervolgens weer dat als er een situatie is waarin n_ongewogen identiek is, dit gegroepeerd wordt tot 1 rij, i.p.v. de verwachte 2.
+    # Ter voorbeeld: een variabele met twee antwoordmogelijkheden (Ja/Nee) en 50 respondenten. Als 26 mensen Ja stemmen, is dit de output van een 'gewone' pivot:
+    # - Verwachte output
+    #     n_gewogen_Nee   n_gewogen_Ja    n_ongewogen
+    #     NA              x               26
+    #     x               NA              24
+    # Wanneer dit echter precies 50/50 is, dus n = 25, dan is dit de output:
+    # - Verwachte output
+    #     n_gewogen_Nee   n_gewogen_Ja    n_ongewogen
+    #     x               y               25
+    # Hierbij worden de twee rijen dus gecombineerd, i.p.v. gescheiden, zoals het script verder wel verwacht. De gewogen waardes kloppen wel,
+    # want daarop wordt gesplitst, maar n_ongewogen wordt gezien als identificatienummer, i.p.v. als waarde, en NIET samengevoegd.
+    # Zie ook https://github.com/ggdatascience/swing_kubusdata_wizard/issues/2
+    # De oplossing: n_ongewogen ook in de pivot stoppen en deze vervolgens handmatig weer optellen. 
+    # Vervolgens moeten we ook n_gewogen weghalen uit de andere namen, omdat de rest van het script de output van een 'gewone' pivot verwacht.
     kubus_df <- kubus_df %>%
-      pivot_wider(names_from = var, values_from = n_gewogen) %>%
-      replace(is.na(.),0)
+      pivot_wider(names_from = var, values_from = c(n_gewogen, n_ongewogen), values_fill=0) %>%
+      rowwise() %>%
+      mutate(n_ongewogen=rowSums(across(starts_with("n_ongewogen")))) %>%
+      select(-starts_with("n_ongewogen_")) %>%
+      ungroup() %>%
+      #relocate(n_ongewogen, .before=starts_with("n_gewogen")) %>%
+      rename_with(~str_sub(.x, start=11), starts_with("n_gewogen")) %>%
+      mutate(geolevel=geolevel, .after=1)
     
     
     #Volgorde van kolomtoewijzing is onregelmatig tussen configuraties. (configuratie met meerdere jaren
@@ -247,29 +268,29 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     }) %>% unlist()
     
     #Bedoelde indeling
-    bedoelde_kolomindexen <- c(1:(min(volgorde_labels_in_df)-1), volgorde_labels_in_df)
+    bedoelde_kolomindexen <- c(1:(min(volgorde_labels_in_df)-1), volgorde_labels_in_df, max(volgorde_labels_in_df)+1) # n_ongewogen staat nu aan het eind; +1 toevoegen
     #toepassen op df
     kubus_df <- kubus_df[,bedoelde_kolomindexen]
     
     #Kolomnamen toewijzen
     namen_variabel_kolommen <- glue("{variabele}_{val_labels(data_totaal[[variabele]])}")
-    names(kubus_df) <- c(jaarvariabele,gebiedsindeling,crossings,'n_ongewogen',namen_variabel_kolommen)
+    names(kubus_df) <- c(jaarvariabele,"geolevel",gebiedsindeling,crossings,namen_variabel_kolommen,'n_ongewogen')
     
     #Functie om te kleine aantallen per groep te verwijderen
     verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}}
     
     #Na pivot opnieuw groeperen en summarizen, daarna te lage aantallen weghalen
     kubus_df <- kubus_df %>%
-      group_by(.[[jaarvariabele]],
-               geolevel,
-               .[[gebiedsindeling]],
-               across(all_of(crossings)))%>%
-      summarise_at(.vars = c(namen_variabel_kolommen, "n_ongewogen"),
-                   .funs = sum) %>%
+      # group_by(.[[jaarvariabele]],
+      #          geolevel,
+      #          .[[gebiedsindeling]],
+      #          across(all_of(crossings)))%>%
+      # summarise_at(.vars = c(namen_variabel_kolommen, "n_ongewogen"),
+      #              .funs = sum) %>%
       #Verwijder te lage aantallen
       mutate(across(.cols = c(all_of(namen_variabel_kolommen),"n_ongewogen") ,
-                    .fns = Vectorize(verwijder_kleine_aantallen), ongewogen = n_ongewogen))%>%
-      ungroup()
+                    .fns = Vectorize(verwijder_kleine_aantallen), ongewogen = n_ongewogen))#%>%
+      #ungroup()
     
     #Periodevariabele aanpassen naar ingesteld type.
     #Omgaan met oude configuraties die die optie niet hadden    
@@ -582,7 +603,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     #variabelnaam opslaan voor een foutbericht na het uitvoeren van een configuratie
     tryCatch({
       
-      saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}{bestandslabel_platte_kubus}.xlsx"), overwrite = TRUE)
+      saveWorkbook(workbook, file = glue("{gekozen_map}/kubus_{variabele}.xlsx"), overwrite = TRUE)
       
     },
     error = function(cond){
