@@ -7,9 +7,14 @@ basismap_output <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing
 basismap_spss_bestanden <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/SPSS data"
 basismap_configuraties <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/Configuraties"
 
-
 nr_regio <- 1413
 naam_regio <- "Noord- en Oost-Gelderland"
+
+#Convenant stelt dat 'microdata' niet gedeeld mag worden met 3en. 
+#GGDGHOR verstaat daaronder ook groepsindelingen van 1.
+#Minimum aantal observaties per vraag kan daarom aangegeven worden in configuratie (--> minimum_observaties)
+#Minimum aantal observaties per antwoord kan hier opgegeven worden:
+min_observaties_per_cel_aantal = 0
 
 #Swing herkent (verschillende instelbare) waarden die missing aangeven 
 #Waarde -99996 past bij Swings default Special value voor 'missing'
@@ -89,7 +94,7 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 #van loops binnen de functie te meten.
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_perioden = FALSE, jaarvariabele = NULL, type_periode = NULL,
                            is_gewogen = FALSE,weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
-                           min_observaties = 0, min_observaties_per_cel = 30, missing_voor_privacy = missing_voor_privacy_swing, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
+                           min_observaties = 0, min_observaties_per_cel = min_observaties_per_cel_aantal, missing_voor_privacy = missing_voor_privacy_swing, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
                            geen_crossings, bestandslabel_platte_kubus = ""){
   
   #is_kubus. Om te zorgen dat bij platte data de waarde "Cube" op tabblad "Indicators" wordt aangepast. 
