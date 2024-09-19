@@ -12,7 +12,10 @@ naam_regio <- "Noord- en Oost-Gelderland"
 
 #Convenant stelt dat 'microdata' niet gedeeld mag worden met 3en. 
 #GGDGHOR verstaat daaronder ook groepsindelingen van 1.
-#Minimum aantal observaties per vraag kan daarom aangegeven worden in configuratie (--> minimum_observaties)
+#Minimum aantal observaties per groepsindeling waarbij data geupload mag worden naar ABF 
+min_observaties_per_rij <- 2
+
+#Minimum aantal observaties per vraag kan aangegeven worden in configuratie (--> minimum_observaties)
 #Minimum aantal observaties per antwoord kan hier opgegeven worden:
 min_observaties_per_cel_aantal = 0
 
@@ -294,7 +297,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     names(kubus_df) <- c(jaarvariabele, "geolevel", gebiedsindeling, crossings, "n_cel", namen_variabel_kolommen, 'n_ongewogen')
     
     #Functie om te kleine aantallen per groep te verwijderen
-    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < min_observaties & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}} 
+    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < min_observaties_per_rij & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}} 
     
     #Functie om kleine aantallen per antwoordoptie (cel) te verwijderen
     verwijder_kleine_cel <- function(x, ongewogen){if(ongewogen < min_observaties_per_cel & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}}
@@ -748,7 +751,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       Groepsindelingen met te weinig observaties worden als missend weergeven. Dit kan betekenen dat percentages
       van die groepen niet kloppen.</p>
       
-      </p>Het minimum aantal observaties per groep is ingesteld op: <strong>{min_observaties}</strong> 
+      </p>Het minimum aantal observaties per groep is ingesteld op: <strong>{min_observaties_per_rij}</strong> 
       Controleer de instellingen van je kruisvariabelen en probeer te kleine groepen te voorkomen.</p>"
     )
   }
