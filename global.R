@@ -7,18 +7,21 @@ basismap_output <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing
 basismap_spss_bestanden <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/SPSS data"
 basismap_configuraties <- "L:/AfdgGGDKenniscentrum/02  Kompas Volksgezondheid NOG/Swing/Configuraties"
 
-
 nr_regio <- 1413
 naam_regio <- "Noord- en Oost-Gelderland"
-
-#Swing herkent (verschillende instelbare) waarden die missing aangeven 
 
 #Convenant stelt dat 'microdata' niet gedeeld mag worden met 3en. 
 #GGDGHOR verstaat daaronder ook groepsindelingen van 1.
 #Minimum aantal observaties per groepsindeling waarbij data geupload mag worden naar ABF 
-minimum_obs_per_rij <- 2
+min_observaties_per_rij <- 2
+
+#Minimum aantal observaties per vraag kan aangegeven worden in configuratie (--> minimum_observaties)
+#Minimum aantal observaties per antwoord kan hier opgegeven worden:
+min_observaties_per_cel_aantal = 0
+
+#Swing herkent (verschillende instelbare) waarden die missing aangeven 
 #Waarde -99996 past bij Swings default Special value voor 'missing'
-missing_voor_privacy <- -99996
+missing_voor_privacy_swing <- -99996
 
 #Swing kan labels van maximaal 100 tekens verwerken. Automatische naamgeving
 #maakt zonodig kortere labels door arbitrair het einde van een var/val-label af te knippen.
@@ -94,7 +97,7 @@ navigatieknoppen <- function(vorige,home,volgende, hide_volgende = T){
 #van loops binnen de functie te meten.
 maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_meer_perioden = FALSE, jaarvariabele = NULL, type_periode = NULL,
                            is_gewogen = FALSE,weegfactor = NULL, gebiedsindeling = NULL,variabelen = NULL, crossings = NULL, geolevel = "gemeente",
-                           min_observaties = 0, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
+                           min_observaties = 0, min_observaties_per_cel = min_observaties_per_cel_aantal, missing_voor_privacy = missing_voor_privacy_swing, bron = NULL, session = NULL, gekozen_map = NULL, alleen_data = F,
                            geen_crossings, bestandslabel_platte_kubus = ""){
   
   #is_kubus. Om te zorgen dat bij platte data de waarde "Cube" op tabblad "Indicators" wordt aangepast. 
@@ -244,15 +247,32 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     # Zie ook https://github.com/ggdatascience/swing_kubusdata_wizard/issues/2
     # De oplossing: n_ongewogen ook in de pivot stoppen en deze vervolgens handmatig weer optellen. 
     # Vervolgens moeten we ook n_gewogen weghalen uit de andere namen, omdat de rest van het script de output van een 'gewone' pivot verwacht.
-    kubus_df <- kubus_df %>%
-      pivot_wider(names_from = var, values_from = c(n_gewogen, n_ongewogen), values_fill=0) %>%
-      rowwise() %>%
-      mutate(n_ongewogen=rowSums(across(starts_with("n_ongewogen")))) %>%
-      select(-starts_with("n_ongewogen_")) %>%
-      ungroup() %>%
-      #relocate(n_ongewogen, .before=starts_with("n_gewogen")) %>%
-      rename_with(~str_sub(.x, start=11), starts_with("n_gewogen")) %>%
-      mutate(geolevel=geolevel, .after=1)
+    
+    if (geen_crossings == FALSE) { # verschillende behandeling afhankelijk van crossing.
+      kubus_df <- kubus_df %>%
+        group_by(.[[crossings]])  %>% # groupeer op crossings
+        mutate(across(.cols = n_ongewogen, min, .names = "n_cel")) %>% # kolom maken met laagste aantal invullers per antwoordoptie
+        pivot_wider(names_from = var, values_from = c(n_gewogen, n_ongewogen), values_fill=0) %>%
+        rowwise() %>%
+        mutate(n_ongewogen=rowSums(across(starts_with("n_ongewogen")))) %>%
+        select(-starts_with("n_ongewogen_")) %>%
+        ungroup() %>%
+        select(-contains("[[crossings]]")) %>% # gemaakte kolumn crossings weer verwijderen
+        #relocate(n_ongewogen, .before=starts_with("n_gewogen")) %>%
+        rename_with(~str_sub(.x, start=11), starts_with("n_gewogen")) %>%
+        mutate(geolevel=geolevel, .after=1)
+    } else {
+      kubus_df <- kubus_df %>%
+        mutate(across(.cols = n_ongewogen, min, .names = "n_cel")) %>% # kolom maken met laagste aantal invullers per antwoordoptie
+        pivot_wider(names_from = var, values_from = c(n_gewogen, n_ongewogen), values_fill=0) %>%
+        rowwise() %>%
+        mutate(n_ongewogen=rowSums(across(starts_with("n_ongewogen")))) %>%
+        select(-starts_with("n_ongewogen_")) %>%
+        ungroup() %>%
+        #relocate(n_ongewogen, .before=starts_with("n_gewogen")) %>%
+        rename_with(~str_sub(.x, start=11), starts_with("n_gewogen")) %>%
+        mutate(geolevel=geolevel, .after=1)
+    }
     
     
     #Volgorde van kolomtoewijzing is onregelmatig tussen configuraties. (configuratie met meerdere jaren
@@ -273,11 +293,14 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     kubus_df <- kubus_df[,bedoelde_kolomindexen]
     
     #Kolomnamen toewijzen
-    namen_variabel_kolommen <- glue("{variabele}_{val_labels(data_totaal[[variabele]])}")
-    names(kubus_df) <- c(jaarvariabele,"geolevel",gebiedsindeling,crossings,namen_variabel_kolommen,'n_ongewogen')
+    namen_variabel_kolommen <- glue("{variabele}_{val_labels(data_totaal[[variabele]])[val_labels(data_totaal[[variabele]]) %in% data_totaal[[variabele]]]}") # alleen variabelen die data hebben, meenemen.
+    names(kubus_df) <- c(jaarvariabele, "geolevel", gebiedsindeling, crossings, "n_cel", namen_variabel_kolommen, 'n_ongewogen')
     
     #Functie om te kleine aantallen per groep te verwijderen
-    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < minimum_obs_per_rij & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}}
+    verwijder_kleine_aantallen <- function(x, ongewogen){if(ongewogen < min_observaties_per_rij & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}} 
+    
+    #Functie om kleine aantallen per antwoordoptie (cel) te verwijderen
+    verwijder_kleine_cel <- function(x, ongewogen){if(ongewogen < min_observaties_per_cel & ongewogen != missing_voor_privacy){missing_voor_privacy}else{x}}
     
     #Na pivot opnieuw groeperen en summarizen, daarna te lage aantallen weghalen
     kubus_df <- kubus_df %>%
@@ -289,7 +312,9 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       #              .funs = sum) %>%
       #Verwijder te lage aantallen
       mutate(across(.cols = c(all_of(namen_variabel_kolommen),"n_ongewogen") ,
-                    .fns = Vectorize(verwijder_kleine_aantallen), ongewogen = n_ongewogen))#%>%
+                    .fns = Vectorize(verwijder_kleine_aantallen), ongewogen = n_ongewogen)) %>%
+      mutate(across(.cols = c(all_of(namen_variabel_kolommen),"n_cel") , 
+                    .fns = Vectorize(verwijder_kleine_cel), ongewogen = n_cel)) 
       #ungroup()
     
     #Periodevariabele aanpassen naar ingesteld type.
@@ -339,9 +364,13 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
     if(geen_crossings){
       crossings <- NULL
       
-      kubus_df[,4] <- NULL
+      #kubus_df[,4] <- NULL 
      
     }
+    
+    # Kolom n_cel is niet meer nodig, weghalen
+    kubus_df <- kubus_df %>%
+      select(-n_cel)
     
     #Data toevoegen aan WB
     addWorksheet(workbook, sheetName = "Data")
@@ -722,7 +751,7 @@ maak_kubusdata <- function(data_totaal = NULL, jaren_voor_analyse = NULL, heeft_
       Groepsindelingen met te weinig observaties worden als missend weergeven. Dit kan betekenen dat percentages
       van die groepen niet kloppen.</p>
       
-      </p>Het minimum aantal observaties per groep is ingesteld op: <strong>{minimum_obs_per_rij}</strong>
+      </p>Het minimum aantal observaties per groep is ingesteld op: <strong>{min_observaties_per_rij}</strong> 
       Controleer de instellingen van je kruisvariabelen en probeer te kleine groepen te voorkomen.</p>"
     )
   }
